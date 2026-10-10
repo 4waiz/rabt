@@ -3,7 +3,7 @@ name = "rabt-workspace"
 version = "0.1.0"
 description = "Rabt monorepo workspace root (not a distributable package)."
 requires-python = ">=3.11"
-dependencies = ["rabt-shared"]
+dependencies = ["rabt-shared", "rabt-integrations"]
 
 [dependency-groups]
 dev = ["pytest>=8.0", "ruff>=0.6"]
@@ -12,10 +12,11 @@ dev = ["pytest>=8.0", "ruff>=0.6"]
 package = false
 
 [tool.uv.workspace]
-members = ["shared"]
+members = ["shared", "integrations"]
 
 [tool.uv.sources]
 rabt-shared = { workspace = true }
+rabt-integrations = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -29,4 +30,4 @@ target-version = "py311"
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["rabt_shared", "rabt_ai"]
+known-first-party = ["rabt_shared", "rabt_ai", "rabt_integrations"]
