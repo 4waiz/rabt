@@ -9,7 +9,7 @@ from uuid import uuid4
 import pytest
 
 from rabt_ai.agent.dates import DateContext, DateParseError, parse_clock, parse_day
-from rabt_ai.agent.guards import claims_completion, neutralize_markup, sanitize_untrusted
+from rabt_ai.agent.guards import claims_completion, needs_lookup, neutralize_markup, sanitize_untrusted
 from rabt_ai.config import PACKAGE_DIR
 from rabt_ai.errors import RabtError
 from rabt_ai.identity import IdentityRegistry
@@ -104,6 +104,23 @@ def test_completion_claims_are_detected(text: str) -> None:
 )
 def test_non_claims_are_not_flagged(text: str) -> None:
     assert not claims_completion(text)
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("How many emails did I get recently? Reply with just the count.", True),
+        ("Any unread mail?", True),
+        ("Am I free tomorrow evening?", True),
+        ("Check my calendar for Monday", True),
+        ("Is Huda available at 6?", True),
+        ("Draft an email to Huda about tomorrow", False),
+        ("Book tuition with Huda tomorrow at 6pm", False),
+        ("Thanks!", False),
+    ],
+)
+def test_needs_lookup(text: str, expected: bool) -> None:
+    assert needs_lookup(text) is expected
 
 
 def test_markup_is_neutralized() -> None:

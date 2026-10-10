@@ -21,7 +21,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from rabt_ai.agent.dates import DateContext
-from rabt_ai.agent.guards import claims_completion, clean_reply, has_leftover_markup
+from rabt_ai.agent.guards import claims_completion, clean_reply, has_leftover_markup, needs_lookup
 from rabt_ai.agent.prompts import build_messages, build_system_prompt, render_tool_result
 from rabt_ai.agent.tools import (
     BuildContext,
@@ -61,6 +61,11 @@ CLAIM_CORRECTION = (
     "but no tool result shows that it succeeded. Nothing has been sent, booked or created. Rewrite the reply "
     "without claiming it is done. If the user wants the action, call the right tool so it can be prepared "
     "for their approval.)"
+)
+GROUNDING_NUDGE = (
+    "(Automatic check from the Rabt system, not from the user: the user asked about their own email, calendar "
+    "or availability, but you answered without looking anything up. You have no memory of their inbox or "
+    "calendar. If the answer depends on that data, call the right tool now; otherwise reply as before.)"
 )
 SAFE_NOT_DONE = "Nothing has been sent or booked yet. Would you like me to prepare it for your approval?"
 LOOP_EXHAUSTED = "I couldn't complete that reliably. Could you rephrase it or give me a bit more detail?"
@@ -331,6 +336,17 @@ class AgentService:
             self._storage.proposals_for_turn(conv.conversation_id, identity.account_id, turn.request_id)
         )
 
+        latest_user = next(
+            (
+                row.content
+                for row in reversed(history)
+                if row.role == "user" and row.request_id == turn.request_id
+            ),
+            "",
+        )
+        # A turn that already ran tools has looked things up; otherwise data questions must not be answered blind.
+        must_ground = used == 0 and needs_lookup(latest_user)
+
         scratch: list[dict[str, Any]] = []  # corrections live only inside this loop
         claim_corrected = False
         for _ in range(s.agent_max_llm_calls):
@@ -355,6 +371,14 @@ class AgentService:
             reply = clean_reply(result.content)
             if not reply or has_leftover_markup(reply):
                 scratch.append({"role": "user", "content": NUDGE_EMPTY})
+                continue
+            if must_ground:
+                must_ground = False  # challenge once; the model may legitimately answer without data
+                log_event(log, "ungrounded_answer_challenged", logging.WARNING, request_id=turn.request_id)
+                scratch += [
+                    {"role": "assistant", "content": reply},
+                    {"role": "user", "content": GROUNDING_NUDGE},
+                ]
                 continue
             if claims_completion(reply) and not self._storage.has_succeeded_action(
                 conv.conversation_id, identity.account_id, SIDE_EFFECT_TOOLS
