@@ -3,7 +3,7 @@ name = "rabt-workspace"
 version = "0.1.0"
 description = "Rabt monorepo workspace root (not a distributable package)."
 requires-python = ">=3.11"
-dependencies = ["rabt-shared", "rabt-ai-engine"]
+dependencies = ["rabt-shared", "rabt-ai-engine", "rabt-integrations"]
 
 [dependency-groups]
 dev = ["pytest>=8.0", "ruff>=0.6"]
@@ -14,11 +14,12 @@ cuda = ["nvidia-cublas-cu12>=12.8.4; sys_platform == 'win32' or sys_platform == 
 package = false
 
 [tool.uv.workspace]
-members = ["shared", "ai-engine"]
+members = ["shared", "ai-engine", "integrations"]
 
 [tool.uv.sources]
 rabt-shared = { workspace = true }
 rabt-ai-engine = { workspace = true }
+rabt-integrations = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -38,4 +39,4 @@ select = ["E", "F", "I", "UP", "B"]
 ignore = ["E501"]  # `ruff format` owns line length; long string literals are fine
 
 [tool.ruff.lint.isort]
-known-first-party = ["rabt_shared", "rabt_ai"]
+known-first-party = ["rabt_shared", "rabt_ai", "rabt_integrations"]
