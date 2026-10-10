@@ -29,14 +29,16 @@ class AIError(RuntimeError):
 class RealAIClient:
     mode = "real"
 
-    def __init__(self, base_url: str, api_key: str, timeout: float = 120.0):
+    def __init__(self, base_url: str, api_key: str, timeout: float = 300.0):
         self.base_url = base_url
         self._headers = {"Authorization": f"Bearer {api_key}"}
-        self.timeout = timeout
+        self.timeout = timeout  # a cold model load plus several LLM calls can exceed 2 minutes
+        # trust_env=False: never route the bearer token through a system proxy, even on loopback.
+        self._http = httpx.Client(timeout=timeout, trust_env=False)
 
     def _post(self, path: str, body: dict) -> AgentResponse:
         try:
-            r = httpx.post(self.base_url + path, json=body, headers=self._headers, timeout=self.timeout)
+            r = self._http.post(self.base_url + path, json=body, headers=self._headers)
         except httpx.HTTPError as exc:
             raise AIError(503, "ai_unreachable", f"AI engine unreachable at {self.base_url}") from exc
         if r.status_code >= 400:
@@ -55,29 +57,27 @@ class RealAIClient:
 
     def health(self) -> dict:
         try:
-            r = httpx.get(self.base_url + "/health", timeout=5)
+            r = self._http.get(self.base_url + "/health", timeout=5)
             return {"reachable": r.status_code == 200, **(r.json() if r.status_code == 200 else {})}
         except httpx.HTTPError:
             return {"reachable": False}
 
     def transcribe(self, account_id: str, filename: str, data: bytes, content_type: str) -> dict:
-        r = httpx.post(
+        r = self._http.post(
             self.base_url + "/v1/audio/transcribe",
             headers=self._headers,
             files={"file": (filename, data, content_type)},
             data={"account_id": account_id},
-            timeout=self.timeout,
         )
         if r.status_code >= 400:
             raise AIError(r.status_code, "stt_error", r.text[:300])
         return r.json()
 
     def speak(self, account_id: str, text: str) -> tuple[bytes, str, dict]:
-        r = httpx.post(
+        r = self._http.post(
             self.base_url + "/v1/audio/speak",
             headers=self._headers,
             json={"account_id": account_id, "text": text[:2000]},
-            timeout=self.timeout,
         )
         if r.status_code >= 400:
             raise AIError(r.status_code, "tts_error", r.text[:300])

@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
+import os
 import secrets
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from pydantic import BaseModel, Field
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -18,6 +21,13 @@ from rabt_integrations.config import Settings, load_settings
 from rabt_integrations.google_api import GoogleApiError, GoogleGateway, GoogleNotConnected
 from rabt_integrations.service import PolicyError, Service
 from rabt_integrations.store import Store
+from rabt_integrations.whatsapp import (
+    WhatsAppClient,
+    WhatsAppConfig,
+    number_of,
+    parse_webhook,
+    verify_signature,
+)
 
 FRONTEND = Path(__file__).resolve().parents[2] / "frontend"
 MAX_BODY = 64 * 1024
@@ -46,7 +56,9 @@ class SpeakBody(BaseModel):
     text: str = Field(min_length=1, max_length=2000)
 
 
-def create_app(settings: Settings | None = None, google=None, ai=None, store: Store | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None, google=None, ai=None, store: Store | None = None, whatsapp=None
+) -> FastAPI:
     settings = settings or load_settings()
     store = store or Store(settings.db_path)
     google = google or GoogleGateway(settings)
@@ -56,7 +68,8 @@ def create_app(settings: Settings | None = None, google=None, ai=None, store: St
             if settings.ai_mode == "real"
             else MockAIClient()
         )
-    svc = Service(store, google, ai, settings.timezone)
+    whatsapp = whatsapp or WhatsAppClient(WhatsAppConfig.from_env())
+    svc = Service(store, google, ai, settings.timezone, whatsapp=whatsapp)
     app = FastAPI(title="Rabt integrations")
     app.state.svc = svc
     app.add_middleware(
@@ -132,7 +145,17 @@ def create_app(settings: Settings | None = None, google=None, ai=None, store: St
                 "google_email": google.token_email(aid) if aid == account_id else None,
                 "shares_freebusy": svc.shares_freebusy(aid),
             }
-        return {"ai_mode": ai.mode, "ai": ai.health(), "accounts": accounts}
+        return {
+            "ai_mode": ai.mode,
+            "ai": ai.health(),
+            "accounts": accounts,
+            "whatsapp": {
+                "configured": whatsapp.config.enabled,
+                "my_number_registered": number_of(account_id) is not None,
+                "opted_in": svc.wa_opted_in(account_id),
+                "in_service_window": svc.wa_in_service_window(account_id),
+            },
+        }
 
     @app.post("/api/settings/share-freebusy")
     def share(body: ShareBody, account_id: str = Depends(current)):
@@ -206,8 +229,48 @@ def create_app(settings: Settings | None = None, google=None, ai=None, store: St
     @app.post("/api/voice/speak")
     def speak(body: SpeakBody, account_id: str = Depends(current)):
         audio, ctype, meta = guard(ai.speak, account_id, body.text)
-        return Response(audio, media_type=ctype, headers={**meta, "X-Rabt-AI-Generated": "true"})
+        headers = {k: v for k, v in meta.items() if k.lower() != "x-rabt-ai-generated"}
+        headers["X-Rabt-AI-Generated"] = "true"  # always labelled, exactly once
+        return Response(audio, media_type=ctype, headers=headers)
 
+    # ------------------------------------------------------------------ WhatsApp Cloud API webhook
+    # Served on the dashboard app (for local use and tests) and, on its own, by a webhook-only app
+    # on RABT_WA_WEBHOOK_PORT. Only that second port should ever be reachable through a tunnel.
+    hooks = APIRouter()
+
+    @hooks.get("/webhooks/whatsapp")
+    def wa_verify(request: Request):
+        q = request.query_params
+        token = whatsapp.config.verify_token
+        if (
+            token
+            and q.get("hub.mode") == "subscribe"
+            and secrets.compare_digest(q.get("hub.verify_token", ""), token)
+        ):
+            return PlainTextResponse(q.get("hub.challenge", ""))
+        raise HTTPException(403, "verification failed")
+
+    @hooks.post("/webhooks/whatsapp")
+    async def wa_webhook(request: Request, background: BackgroundTasks):
+        raw = await request.body()
+        if len(raw) > MAX_BODY:  # also covers chunked bodies without Content-Length
+            raise HTTPException(413, "payload too large")
+        if not verify_signature(whatsapp.config.app_secret, raw, request.headers.get("x-hub-signature-256")):
+            store.audit("system", "whatsapp.bad_signature")
+            raise HTTPException(401, "invalid signature")
+        try:
+            payload = json.loads(raw)
+        except ValueError as exc:
+            raise HTTPException(400, "invalid JSON") from exc
+        messages, statuses = parse_webhook(payload, whatsapp.config.phone_number_id)
+        # Acknowledge at once; the AI turn can take minutes and Meta retries slow webhooks.
+        background.add_task(svc.handle_whatsapp, messages, statuses)
+        return {"ok": True}
+
+    app.include_router(hooks)
+    webhook_app = FastAPI(title="Rabt WhatsApp webhook", docs_url=None, redoc_url=None, openapi_url=None)
+    webhook_app.include_router(hooks)
+    app.state.webhook_app = webhook_app
     return app
 
 
@@ -216,7 +279,19 @@ def main() -> None:
 
     logging.basicConfig(level="INFO")
     settings = load_settings()
-    uvicorn.run(create_app(settings), host=settings.host, port=settings.port)
+    app = create_app(settings)
+    servers = [uvicorn.Server(uvicorn.Config(app, host=settings.host, port=settings.port))]
+    if WhatsAppConfig.from_env().enabled:
+        wa_port = int(os.environ.get("RABT_WA_WEBHOOK_PORT", "8801"))
+        servers.append(
+            uvicorn.Server(uvicorn.Config(app.state.webhook_app, host=settings.host, port=wa_port))
+        )
+        logging.info("WhatsApp webhook-only server on %s:%s (tunnel only this port)", settings.host, wa_port)
+
+    async def serve() -> None:
+        await asyncio.gather(*(s.serve() for s in servers))
+
+    asyncio.run(serve())
 
 
 if __name__ == "__main__":

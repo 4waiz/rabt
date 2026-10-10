@@ -26,6 +26,11 @@ CREATE TABLE IF NOT EXISTS lessons (
     tutor_approved_version INTEGER, student_approved_version INTEGER, last_action_by TEXT,
     event_id TEXT, event_link TEXT, note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS wa_seen (message_id TEXT PRIMARY KEY, at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS wa_messages (
+    message_id TEXT PRIMARY KEY, account_id TEXT NOT NULL, direction TEXT NOT NULL,
+    status TEXT NOT NULL, error_code TEXT, updated_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS audit (
     id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, account_id TEXT NOT NULL,
     action TEXT NOT NULL, detail TEXT NOT NULL
@@ -77,6 +82,34 @@ class Store:
 
     def set_setting(self, account_id: str, key: str, value: str) -> None:
         self._q("INSERT OR REPLACE INTO settings VALUES (?, ?, ?)", (account_id, key, value))
+
+    # ------------------------------------------------------------------ whatsapp
+    def wa_first_seen(self, message_id: str) -> bool:
+        """True exactly once per WhatsApp message id (webhook deliveries are retried)."""
+        with self._lock:
+            cur = self._db.execute(
+                "INSERT OR IGNORE INTO wa_seen (message_id, at) VALUES (?, ?)", (message_id, now_iso())
+            )
+            return cur.rowcount == 1
+
+    def wa_record(self, message_id: str, account_id: str, direction: str, status: str) -> None:
+        self._q(
+            "INSERT OR IGNORE INTO wa_messages VALUES (?, ?, ?, ?, NULL, ?)",
+            (message_id, account_id, direction, status, now_iso()),
+        )
+
+    def wa_status(self, message_id: str, status: str, error_code: str | None) -> None:
+        rows = self._q("SELECT account_id FROM wa_messages WHERE message_id=?", (message_id,))
+        if not rows:
+            return  # not one of ours
+        self._q(
+            "UPDATE wa_messages SET status=?, error_code=?, updated_at=? WHERE message_id=?",
+            (status, error_code, now_iso(), message_id),
+        )
+        if status == "failed":
+            self.audit(
+                rows[0]["account_id"], "whatsapp.delivery_failed", message_id=message_id, error=error_code
+            )
 
     # ------------------------------------------------------------------ audit
     def audit(self, account_id: str, action: str, **detail: Any) -> None:

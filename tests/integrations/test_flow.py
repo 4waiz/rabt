@@ -65,6 +65,7 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setenv("RABT_GOOGLE_EMAIL_AWAIZ", "awaiz@example.com")
     monkeypatch.setenv("RABT_GOOGLE_EMAIL_HUDA", "huda@example.com")
     monkeypatch.setenv("RABT_BACKEND_DATA_DIR", str(tmp_path))
+    monkeypatch.chdir(tmp_path)  # load_settings() reads ./.env; keep a developer's .env out of tests
     google = FakeGoogle()
     app = create_app(load_settings(), google=google, ai=MockAIClient(), store=Store(":memory:"))
     return app, google
@@ -170,7 +171,7 @@ def test_conflict_recheck_blocks_booking(env):
     assert huda.get("/api/lesson").json()["state"] == "FAILED"
 
 
-def test_booking_blocked_without_tutor_agreement(env):
+def test_booking_before_agreement_is_denied_and_reported(env):
     app, google = env
     huda, awaiz = client(app, "huda", "2222"), client(app, "awaiz", "1111")
     for c in (huda, awaiz):
@@ -181,8 +182,23 @@ def test_booking_blocked_without_tutor_agreement(env):
         "pending"
     ]
     ev = next(p for p in pending if p["tool"] == "calendar.create_event")
-    r = huda.post(f"/api/proposals/{ev['proposal_id']}/approve")
-    assert r.status_code == 409 and google.inserts == 0
+    draft = next(p for p in pending if p["tool"] == "gmail.create_draft")
+    assert huda.post(f"/api/proposals/{ev['proposal_id']}/approve").status_code == 200
+    r = huda.post(f"/api/proposals/{draft['proposal_id']}/reject").json()
+    # The engine is told why (denied / lesson_not_agreed), so the agent can explain it.
+    assert google.inserts == 0 and "not both agreed" in r["replies"][-1]
+    statuses = {p["proposal_id"]: p for p in huda.get("/api/proposals").json()}
+    assert statuses[ev["proposal_id"]]["status"] == "denied"
+    assert statuses[ev["proposal_id"]]["error"]["code"] == "lesson_not_agreed"
+
+
+def test_daily_window_limits_slots(env):
+    from rabt_integrations.service import _outside_daily_window
+
+    s = datetime(2026, 10, 11, 0, tzinfo=TZ)
+    blocked = _outside_daily_window(s, s + timedelta(days=2), TZ, "17:00", "21:00")
+    slots = find_slots(s, s + timedelta(days=2), blocked, timedelta(hours=1), max_slots=10)
+    assert slots and all(17 <= a.hour and b.hour <= 21 and b.date() == a.date() for a, b in slots)
 
 
 def test_gmail_reads_only_own_mailbox(env):
@@ -193,6 +209,7 @@ def test_gmail_reads_only_own_mailbox(env):
 
 
 def test_backend_data_dir_and_downloaded_client_file(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)  # no developer .env may re-add RABT_GOOGLE_CLIENT_SECRET_FILE
     monkeypatch.setenv("RABT_DATA_DIR", str(tmp_path / "ai-engine"))  # the AI engine's dir is ignored
     monkeypatch.setenv("RABT_BACKEND_DATA_DIR", str(tmp_path / "backend"))
     monkeypatch.delenv("RABT_GOOGLE_CLIENT_SECRET_FILE", raising=False)

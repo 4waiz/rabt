@@ -97,7 +97,8 @@ async function refresh(){
   const [st,props,lesson,act]=await Promise.all([api('/api/status'),api('/api/proposals'),api('/api/lesson'),api('/api/activity')]);
   const m=$('aimode');m.textContent=st.ai_mode==='mock'?'MOCK AI (no LLM)':(st.ai.reachable?'Local AI connected':'Local AI offline');
   m.className='badge '+(st.ai_mode==='mock'?'mock':st.ai.reachable?'on':'off');
-  $('status').innerHTML=Object.entries(st.accounts).map(([id,a])=>`<div>${esc(id)}: Google <span class="badge ${a.google_connected?'on':'off'}">${a.google_connected?'connected':'not connected'}</span>${a.google_email?' '+esc(a.google_email):''} · free/busy ${a.shares_freebusy?'shared':'private'}</div>`).join('');
+  $('status').innerHTML=Object.entries(st.accounts).map(([id,a])=>`<div>${esc(id)}: Google <span class="badge ${a.google_connected?'on':'off'}">${a.google_connected?'connected':'not connected'}</span>${a.google_email?' '+esc(a.google_email):''} · free/busy ${a.shares_freebusy?'shared':'private'}</div>`).join('')+
+    `<div>WhatsApp: <span class="badge ${st.whatsapp.configured?'on':'off'}">${st.whatsapp.configured?'configured':'not configured'}</span>${st.whatsapp.configured?` · your number ${st.whatsapp.my_number_registered?'registered':'not registered'} · ${st.whatsapp.opted_in?'opted in':'opted out (send START)'} · ${st.whatsapp.in_service_window?'24h window open':'message Rabt first to open the 24h window'}`:''}</div>`;
   renderPending(props.filter(p=>p.status==='pending'));renderLesson(lesson);
   $('activity').innerHTML=act.slice(0,12).map(a=>`<div>${fmt(a.at)} — ${esc(a.action)}${a.detail.tool?' · '+esc(a.detail.tool):''}${a.detail.error?' · <span class=err>'+esc(a.detail.error)+'</span>':''}</div>`).join('')||'No activity yet.';
 }

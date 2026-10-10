@@ -15,19 +15,21 @@ import hashlib
 import json
 import logging
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from rabt_integrations import store as st
 from rabt_integrations.accounts import ACCOUNTS, get_account
 from rabt_integrations.google_api import GoogleApiError, GoogleNotConnected
 from rabt_integrations.slots import find_slots, overlaps
+from rabt_integrations.whatsapp import SERVICE_WINDOW, WhatsAppError, account_for_number, number_of
 from rabt_shared.agent import AgentResponse, TurnStatus
 from rabt_shared.tools import (
     CreateDraftArgs,
     CreateEventArgs,
     FindMutualSlotArgs,
     ListRecentEmailArgs,
+    SendMessageArgs,
     get_tool_spec,
 )
 
@@ -49,22 +51,24 @@ def _tz(name: str) -> ZoneInfo:
 
 
 class Service:
-    def __init__(self, store: st.Store, google, ai, timezone: str = "Asia/Dubai"):
+    def __init__(self, store: st.Store, google, ai, timezone: str = "Asia/Dubai", whatsapp=None):
         self.store = store
         self.google = google
         self.ai = ai
         self.timezone = timezone
+        self.whatsapp = whatsapp
 
     # ================================================================== chat turns
-    def chat(self, account_id: str, message: str) -> dict:
+    def chat(self, account_id: str, message: str, channel: str = "web") -> dict:
         acct = get_account(account_id)
-        conv = self.store.conversation_id(account_id)
+        # One conversation per account and channel; web keeps the original key.
+        conv = self.store.conversation_id(account_id if channel == "web" else f"{account_id}:{channel}")
         req = {
             "request_id": str(uuid.uuid4()),
             "conversation_id": conv,
             "account_id": account_id,
             "role": acct.role.value,
-            "channel": "web",
+            "channel": channel,
             "message": message,
             "timezone": self.timezone,
             "sent_at": datetime.now(_tz(self.timezone)).isoformat(),
@@ -112,7 +116,18 @@ class Service:
     def approve(self, account_id: str, proposal_id: str) -> dict:
         p = self._own_pending(account_id, proposal_id)
         if p["tool"] == "calendar.create_event":
-            self._check_lesson_gate(p)  # raises PolicyError -> 409 for the UI; proposal stays pending
+            try:
+                self._check_lesson_gate(p)
+            except PolicyError as exc:
+                # Nothing runs. Tell the engine why, so the agent can explain it to the user.
+                error = {"code": exc.code, "message": str(exc)[:500]}
+                if not self.store.claim_proposal(proposal_id, "pending", "denied", error=error):
+                    raise PolicyError("proposal_not_pending", "This proposal was already handled.") from exc
+                self.store.audit(
+                    account_id, "tool.denied", proposal_id=proposal_id, tool=p["tool"], error=exc.code
+                )
+                resp = self.ai.tool_result(self._result_req(p, "denied", error=error))
+                return self._handle(account_id, resp, replies=[])
         if not self.store.claim_proposal(
             proposal_id, "pending", "approved", approved_by=account_id, approved_hash=p["args_hash"]
         ):
@@ -178,7 +193,7 @@ class Service:
             status, result = "failed", None
             error = {"code": "google_not_connected", "message": str(exc)[:500], "retryable": True}
             self.store.claim_proposal(proposal_id, "executing", "failed", error=error)
-        except GoogleApiError as exc:
+        except (GoogleApiError, WhatsAppError) as exc:
             status, result = "failed", None
             error = {"code": exc.code, "message": str(exc)[:500], "retryable": exc.retryable}
             self.store.claim_proposal(proposal_id, "executing", "failed", error=error)
@@ -218,6 +233,8 @@ class Service:
             return {"draft_id": self.google.create_draft(account_id, to, a.subject, a.body)}
         if tool == "calendar.create_event":
             return self._create_event(account_id, p)
+        if tool == "messaging.send_message":
+            return self._send_message(account_id, SendMessageArgs.model_validate(p["args"]))
         raise PolicyError("tool_not_supported", f"{tool} is not enabled in this backend yet.")
 
     def _email_of(self, account_id: str) -> str:
@@ -246,6 +263,7 @@ class Service:
                 raise PolicyError("freebusy_not_shared", f"{pid} has not agreed to share free/busy.")
         tz = _tz(a.timezone)
         busy = self._busy_union(ids, a.window_start, a.window_end, a.timezone)
+        busy += _outside_daily_window(a.window_start, a.window_end, tz, a.daily_start, a.daily_end)
         found = find_slots(
             a.window_start, a.window_end, busy, timedelta(minutes=a.duration_minutes), a.max_slots
         )
@@ -257,6 +275,91 @@ class Service:
         if tutor and student and slots:
             self.store.create_lesson(student, tutor, slots, a.timezone, by=account_id)
         return {"slots": slots}
+
+    # ================================================================== whatsapp
+    def wa_opted_in(self, account_id: str) -> bool:
+        return self.store.get_setting(account_id, "wa_opt_out", "0") != "1"
+
+    def wa_in_service_window(self, account_id: str) -> bool:
+        last = self.store.get_setting(account_id, "wa_last_inbound", "")
+        return bool(last) and datetime.now(UTC) - datetime.fromisoformat(last) < SERVICE_WINDOW
+
+    def wa_send(self, account_id: str, text: str) -> str:
+        """Free-form text to a registered account: requires opt-in and the 24-hour window."""
+        if self.whatsapp is None or not self.whatsapp.config.enabled:
+            raise PolicyError("whatsapp_not_configured", "WhatsApp is not configured on this backend.")
+        to = number_of(account_id)
+        if not to:
+            raise PolicyError("recipient_no_whatsapp", f"{account_id} has no registered WhatsApp number.")
+        if not self.wa_opted_in(account_id):
+            raise PolicyError("recipient_opted_out", f"{account_id} has opted out of WhatsApp messages.")
+        if not self.wa_in_service_window(account_id):
+            raise PolicyError(
+                "outside_service_window",
+                f"{account_id} has not messaged Rabt on WhatsApp in the last 24 hours; "
+                "free-form messages are not allowed (an approved template would be required).",
+            )
+        message_id = self.whatsapp.send_text(to, text)
+        self.store.wa_record(message_id, account_id, "out", "sent")
+        self.store.audit(account_id, "whatsapp.sent", message_id=message_id, chars=len(text))
+        return message_id
+
+    def _send_message(self, account_id: str, a: SendMessageArgs) -> dict:
+        if a.recipient_account_id not in ACCOUNTS:
+            raise PolicyError("recipient_unknown", "Recipients must be registered accounts.")
+        if a.channel not in (None, "whatsapp"):
+            raise PolicyError("channel_not_supported", f"{a.channel} is not enabled in this backend yet.")
+        message_id = self.wa_send(a.recipient_account_id, a.text)
+        return {"message_id": message_id, "channel": "whatsapp", "sent_at": datetime.now(UTC).isoformat()}
+
+    def handle_whatsapp(self, messages, statuses) -> None:
+        """Process a verified webhook delivery. Runs after the webhook has already returned 200."""
+        for s in statuses:
+            self.store.wa_status(s.message_id, s.status, s.error_code)
+        for m in messages:
+            if not self.store.wa_first_seen(m.message_id):
+                continue  # Meta retries deliveries: each message is processed once
+            account_id = account_for_number(m.wa_id)
+            if account_id is None:
+                log.info("whatsapp message from an unregistered number ignored")
+                continue
+            self.store.wa_record(m.message_id, account_id, "in", "received")
+            self.store.set_setting(account_id, "wa_last_inbound", m.timestamp.isoformat())
+            text = (m.text or "").strip()
+            if text.upper() in ("STOP", "UNSUBSCRIBE"):
+                self.store.set_setting(account_id, "wa_opt_out", "1")
+                self.store.audit(account_id, "whatsapp.opt_out")
+                continue
+            if text.upper() == "START":
+                self.store.set_setting(account_id, "wa_opt_out", "0")
+                self.store.audit(account_id, "whatsapp.opt_in")
+                self._wa_reply(account_id, "You're subscribed to Rabt again. Reply STOP to opt out.")
+                continue
+            if not self.wa_opted_in(account_id):
+                continue
+            if m.type != "text" or not text:
+                self._wa_reply(account_id, "Rabt can only read text messages on WhatsApp for now.")
+                continue
+            try:
+                out = self.chat(account_id, text, channel="whatsapp")
+            except Exception as exc:  # never leave the user with silence, never claim success
+                log.warning("whatsapp turn failed: %s", type(exc).__name__)
+                self._wa_reply(account_id, "Sorry, Rabt couldn't process that right now. Please try again.")
+                continue
+            reply = "\n\n".join(out["replies"])
+            pending = [p for p in out["pending"] if p["requires_approval"]]
+            if pending:
+                reply += "\n\nWaiting for your approval in the Rabt app:\n" + "\n".join(
+                    f"- {p['summary']}" for p in pending
+                )
+            if reply.strip():
+                self._wa_reply(account_id, reply.strip())
+
+    def _wa_reply(self, account_id: str, text: str) -> None:
+        try:
+            self.wa_send(account_id, text)
+        except (PolicyError, WhatsAppError) as exc:
+            self.store.audit(account_id, "whatsapp.send_failed", error=getattr(exc, "code", "error"))
 
     # ================================================================== lesson workflow
     def _lesson_for(self, p: dict) -> dict | None:
@@ -378,3 +481,23 @@ class Service:
             raise PolicyError("bad_action", "Unknown lesson action.")
         self.store.audit(account_id, f"lesson.{action}", lesson_id=lesson_id, version=lesson["version"])
         return self.lesson_view(account_id)  # type: ignore[return-value]
+
+
+def _outside_daily_window(
+    start: datetime, end: datetime, tz: ZoneInfo, daily_start: str | None, daily_end: str | None
+) -> list[tuple[datetime, datetime]]:
+    """Contract 0.1.1: block out the hours before daily_start and after daily_end on each day."""
+    if not daily_start and not daily_end:
+        return []
+    blocked = []
+    day = start.astimezone(tz).date()
+    while datetime.combine(day, time.min, tz) < end:
+        midnight = datetime.combine(day, time.min, tz)
+        if daily_start:
+            h, m = map(int, daily_start.split(":"))
+            blocked.append((midnight, midnight.replace(hour=h, minute=m)))
+        if daily_end:
+            h, m = map(int, daily_end.split(":"))
+            blocked.append((midnight.replace(hour=h, minute=m), midnight + timedelta(days=1)))
+        day += timedelta(days=1)
+    return blocked
