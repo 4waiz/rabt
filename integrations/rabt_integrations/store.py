@@ -93,8 +93,8 @@ class Store:
     def add_proposal(self, p: dict) -> None:
         ts = now_iso()
         self._q(
-            "INSERT OR IGNORE INTO proposals (proposal_id, request_id, conversation_id, account_id, tool, args,"
-            " summary, requires_approval, status, args_hash, created_at, updated_at)"
+            "INSERT OR IGNORE INTO proposals (proposal_id, request_id, conversation_id, account_id,"
+            " tool, args, summary, requires_approval, status, args_hash, created_at, updated_at)"
             " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 p["proposal_id"],
@@ -125,7 +125,10 @@ class Store:
     def claim_proposal(self, proposal_id: str, from_status: str, to_status: str, **fields: Any) -> bool:
         """Atomic status transition: only one caller wins, so a double-click cannot execute twice."""
         sets = ", ".join(f"{k}=?" for k in fields)
-        sql = f"UPDATE proposals SET status=?, updated_at=?{', ' + sets if sets else ''} WHERE proposal_id=? AND status=?"
+        sql = (
+            f"UPDATE proposals SET status=?, updated_at=?{', ' + sets if sets else ''}"
+            " WHERE proposal_id=? AND status=?"
+        )
         values = [
             json.dumps(v) if k in ("result", "error") and v is not None else v for k, v in fields.items()
         ]
@@ -169,8 +172,8 @@ class Store:
 
     def create_lesson(self, student_id: str, tutor_id: str, options: list[dict], tz: str, by: str) -> dict:
         for old in self._q(
-            "SELECT lesson_id FROM lessons WHERE student_id=? AND tutor_id=? AND state IN (%s)"
-            % ",".join("?" * len(OPEN_STATES)),
+            "SELECT lesson_id FROM lessons WHERE student_id=? AND tutor_id=?"
+            f" AND state IN ({','.join('?' * len(OPEN_STATES))})",
             (student_id, tutor_id, *OPEN_STATES),
         ):
             self.update_lesson(old["lesson_id"], state=CANCELLED, note="superseded by a new request")

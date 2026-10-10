@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import secrets
 from pathlib import Path
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -194,7 +195,7 @@ def create_app(settings: Settings | None = None, google=None, ai=None, store: St
         return store.audit_log(account_id)
 
     @app.post("/api/voice/transcribe")
-    async def transcribe(file: UploadFile = File(...), account_id: str = Depends(current)):
+    async def transcribe(file: Annotated[UploadFile, File()], account_id: str = Depends(current)):
         data = await file.read()
         if len(data) > MAX_AUDIO:
             raise HTTPException(413, "Audio too large.")
