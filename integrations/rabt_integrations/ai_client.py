@@ -164,7 +164,8 @@ class MockAIClient:
                             "description": "Tuition session arranged by Rabt.",
                         },
                         "requires_approval": True,
-                        "summary": f"Create 'Tuition: Awaiz & Huda' on {_fmt(start)}-{end:%H:%M} and invite {who}.",
+                        "summary": f"Create 'Tuition: Awaiz & Huda' on {_fmt(start)}-{end:%H:%M} "
+                        f"and invite {who}.",
                     },
                     {
                         "proposal_id": str(uuid.uuid4()),
@@ -172,8 +173,9 @@ class MockAIClient:
                         "args": {
                             "to_account_ids": [other],
                             "subject": f"Tuition on {start:%a %d %b} at {start:%H:%M}",
-                            "body": f"Hi {who.split()[0]},\n\nConfirming tuition on {_fmt(start)}-{end:%H:%M} "
-                            f"(Asia/Dubai). A calendar invitation is on its way.\n\nThanks!",
+                            "body": f"Hi {who.split()[0]},\n\nConfirming tuition on "
+                            f"{_fmt(start)}-{end:%H:%M} (Asia/Dubai). "
+                            "A calendar invitation is on its way.\n\nThanks!",
                         },
                         "requires_approval": True,
                         "summary": f"Draft (not send) an email to {who} confirming tuition on {_fmt(start)}.",
