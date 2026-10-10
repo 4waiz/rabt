@@ -64,7 +64,7 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setenv("RABT_PIN_HUDA", "2222")
     monkeypatch.setenv("RABT_GOOGLE_EMAIL_AWAIZ", "awaiz@example.com")
     monkeypatch.setenv("RABT_GOOGLE_EMAIL_HUDA", "huda@example.com")
-    monkeypatch.setenv("RABT_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("RABT_BACKEND_DATA_DIR", str(tmp_path))
     google = FakeGoogle()
     app = create_app(load_settings(), google=google, ai=MockAIClient(), store=Store(":memory:"))
     return app, google
@@ -190,3 +190,15 @@ def test_gmail_reads_only_own_mailbox(env):
     awaiz = client(app, "awaiz", "1111")
     r = awaiz.post("/api/chat", json={"message": "check my email"}).json()
     assert "hello awaiz" in r["replies"][-1] and "huda" not in r["replies"][-1]
+
+
+def test_backend_data_dir_and_downloaded_client_file(monkeypatch, tmp_path):
+    monkeypatch.setenv("RABT_DATA_DIR", str(tmp_path / "ai-engine"))  # the AI engine's dir is ignored
+    monkeypatch.setenv("RABT_BACKEND_DATA_DIR", str(tmp_path / "backend"))
+    monkeypatch.delenv("RABT_GOOGLE_CLIENT_SECRET_FILE", raising=False)
+    (tmp_path / "backend" / "secrets").mkdir(parents=True)
+    downloaded = tmp_path / "backend" / "secrets" / "client_secret_123-abc.apps.googleusercontent.com.json"
+    downloaded.write_text("{}")
+    s = load_settings()
+    assert s.secrets_dir == tmp_path / "backend" / "secrets"
+    assert s.google_client_secret_file == downloaded

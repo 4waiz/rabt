@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -19,10 +18,15 @@ def _load_dotenv(path: Path) -> None:
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
-def _default_data_dir() -> Path:
-    if sys.platform == "win32" and os.environ.get("LOCALAPPDATA"):
-        return Path(os.environ["LOCALAPPDATA"]) / "Rabt"
-    return Path.home() / ".local" / "share" / "rabt"
+def _client_secret_file(data_dir: Path) -> Path:
+    """RABT_GOOGLE_CLIENT_SECRET_FILE, else secrets/google_client_secret.json, else the one
+    client_secret*.json that Google's download button produced in the secrets folder."""
+    if os.environ.get("RABT_GOOGLE_CLIENT_SECRET_FILE"):
+        return Path(os.environ["RABT_GOOGLE_CLIENT_SECRET_FILE"]).expanduser()
+    secrets_dir = data_dir / "secrets"
+    default = secrets_dir / "google_client_secret.json"
+    downloads = sorted(secrets_dir.glob("client_secret*.json")) if secrets_dir.is_dir() else []
+    return downloads[0] if not default.is_file() and len(downloads) == 1 else default
 
 
 @dataclass(frozen=True)
@@ -48,17 +52,16 @@ class Settings:
 
 def load_settings() -> Settings:
     _load_dotenv(Path.cwd() / ".env")
-    data_dir = Path(os.environ.get("RABT_DATA_DIR") or _default_data_dir())
+    # Separate from the AI engine's RABT_DATA_DIR so OAuth tokens never sit next to its files, and
+    # outside %LOCALAPPDATA%, which MSIX-packaged apps (e.g. the Claude desktop app) redirect.
+    data_dir = Path(os.environ.get("RABT_BACKEND_DATA_DIR") or Path.home() / ".rabt-backend").expanduser()
     return Settings(
         data_dir=data_dir,
         ai_mode=os.environ.get("RABT_AI_MODE", "mock").lower(),
         ai_base_url=os.environ.get("RABT_AI_BASE_URL", "http://127.0.0.1:8765").rstrip("/"),
         internal_api_key=os.environ.get("RABT_INTERNAL_API_KEY", ""),
         session_secret=os.environ.get("RABT_SESSION_SECRET", ""),
-        google_client_secret_file=Path(
-            os.environ.get("RABT_GOOGLE_CLIENT_SECRET_FILE")
-            or data_dir / "secrets" / "google_client_secret.json"
-        ),
+        google_client_secret_file=_client_secret_file(data_dir),
         timezone=os.environ.get("RABT_DEFAULT_TIMEZONE", "Asia/Dubai"),
         host=os.environ.get("RABT_BACKEND_HOST", "127.0.0.1"),
         port=int(os.environ.get("RABT_BACKEND_PORT", "8800")),

@@ -14,13 +14,14 @@ RABT_PIN_HUDA=<pick a PIN>
 RABT_PIN_AWAIZ=<pick a PIN>
 RABT_GOOGLE_EMAIL_HUDA=kanbanrabt@gmail.com
 RABT_GOOGLE_EMAIL_AWAIZ=<Awaiz's Gmail>
-# optional: RABT_GOOGLE_CLIENT_SECRET_FILE (default %LOCALAPPDATA%\Rabt\secrets\google_client_secret.json)
+# optional: RABT_BACKEND_DATA_DIR (default %USERPROFILE%\.rabt-backend), RABT_GOOGLE_CLIENT_SECRET_FILE
 ```
 
 ## 2. Google (one Cloud project, Desktop OAuth client)
 
 Gmail API + Calendar API enabled, consent screen External/Testing with both people as test users,
-Desktop client JSON saved to `%LOCALAPPDATA%\Rabt\secrets\google_client_secret.json`.
+Desktop client JSON saved in `%USERPROFILE%\.rabt-backend\secrets\`. The downloaded
+`client_secret_*.json` is picked up as-is (or name it `google_client_secret.json`).
 
 Scopes (least privilege): `gmail.readonly` (metadata + snippet of own mail), `gmail.compose` (drafts,
 never sent), `calendar.freebusy` (busy times only), `calendar.events` (create the approved event).
@@ -33,7 +34,9 @@ uv run python -m rabt_integrations.google_auth awaiz   # Awaiz signs in as himse
 ```
 
 The token is refused and deleted if the signed-in Google address differs from
-`RABT_GOOGLE_EMAIL_<ID>`. Tokens live in `%LOCALAPPDATA%\Rabt\secrets\google_token_<id>.json`.
+`RABT_GOOGLE_EMAIL_<ID>`. Tokens live in
+`%USERPROFILE%\.rabt-backend\secrets\google_token_<id>.json`, separate from the AI engine's
+`RABT_DATA_DIR`, so they are never stored next to the engine's files.
 
 ## 3. Run
 
