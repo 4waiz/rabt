@@ -1,0 +1,10 @@
+{
+  "request_id": "0b7e6f2a-1c3d-4e5f-8a9b-0c1d2e3f4a51",
+  "conversation_id": "6f1c2b7e-3d4a-4c1e-9b8f-2a1d3c4e5f60",
+  "account_id": "awaiz",
+  "role": "tutor",
+  "channel": "web",
+  "message": "Can you book tuition with Huda tomorrow evening?",
+  "timezone": "Asia/Dubai",
+  "sent_at": "2026-10-10T20:15:00+04:00"
+}

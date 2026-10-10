@@ -1,0 +1,14 @@
+{
+  "request_id": "0b7e6f2a-1c3d-4e5f-8a9b-0c1d2e3f4a51",
+  "conversation_id": "6f1c2b7e-3d4a-4c1e-9b8f-2a1d3c4e5f60",
+  "account_id": "awaiz",
+  "proposal_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "tool": "calendar.find_mutual_slot",
+  "status": "succeeded",
+  "result": {
+    "slots": [
+      {"start": "2026-10-11T18:00:00+04:00", "end": "2026-10-11T19:00:00+04:00"},
+      {"start": "2026-10-11T19:30:00+04:00", "end": "2026-10-11T20:30:00+04:00"}
+    ]
+  }
+}

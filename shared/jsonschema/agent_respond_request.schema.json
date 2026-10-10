@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "Channel": {
+      "enum": [
+        "web",
+        "whatsapp",
+        "discord"
+      ],
+      "title": "Channel",
+      "type": "string"
+    },
+    "Role": {
+      "enum": [
+        "tutor",
+        "student"
+      ],
+      "title": "Role",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One user turn, sent by the authenticated integration backend.",
+  "properties": {
+    "request_id": {
+      "description": "Unique per user turn. Re-sending the same body replays the stored response.",
+      "format": "uuid",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "conversation_id": {
+      "description": "Chosen by the backend; bound to account_id on first use.",
+      "format": "uuid",
+      "title": "Conversation Id",
+      "type": "string"
+    },
+    "account_id": {
+      "description": "Authenticated by the integration backend. Never derived from message text.",
+      "maxLength": 64,
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "title": "Account Id",
+      "type": "string"
+    },
+    "role": {
+      "$ref": "#/$defs/Role"
+    },
+    "channel": {
+      "$ref": "#/$defs/Channel"
+    },
+    "message": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Message",
+      "type": "string"
+    },
+    "timezone": {
+      "default": "Asia/Dubai",
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Timezone",
+      "type": "string"
+    },
+    "sent_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "When the user sent the message. Defaults to the time the engine received it.",
+      "title": "Sent At"
+    }
+  },
+  "required": [
+    "request_id",
+    "conversation_id",
+    "account_id",
+    "role",
+    "channel",
+    "message"
+  ],
+  "title": "AgentRespondRequest",
+  "type": "object"
+}

@@ -1,0 +1,19 @@
+{
+  "01_respond_request.json": "agent_respond_request",
+  "02_response_find_slot_proposal.json": "agent_response",
+  "03_tool_result_find_slot_succeeded.json": "tool_result_request",
+  "04_response_slot_recommendation.json": "agent_response",
+  "05_respond_request_confirm.json": "agent_respond_request",
+  "06_response_create_event_proposal.json": "agent_response",
+  "07a_tool_result_create_event_succeeded.json": "tool_result_request",
+  "07b_tool_result_create_event_rejected.json": "tool_result_request",
+  "07c_tool_result_create_event_failed.json": "tool_result_request",
+  "08a_response_booking_confirmed.json": "agent_response",
+  "08b_response_after_rejection.json": "agent_response",
+  "speak_request.json": "speak_request",
+  "transcription_response.json": "transcription_response",
+  "agent_status_response.json": "agent_status_response",
+  "health_response.json": "health_response",
+  "error_role_mismatch.json": "error_response",
+  "error_validation.json": "error_response"
+}

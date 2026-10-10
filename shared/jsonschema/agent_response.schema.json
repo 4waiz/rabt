@@ -1,0 +1,602 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "CalendarCreateEventProposal": {
+      "additionalProperties": false,
+      "properties": {
+        "proposal_id": {
+          "format": "uuid",
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "tool": {
+          "const": "calendar.create_event",
+          "title": "Tool",
+          "type": "string"
+        },
+        "args": {
+          "$ref": "#/$defs/CreateEventArgs"
+        },
+        "requires_approval": {
+          "const": true,
+          "default": true,
+          "title": "Requires Approval",
+          "type": "boolean"
+        },
+        "summary": {
+          "description": "Engine-generated description of exactly what would be executed. Show this text in approval prompts.",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "proposal_id",
+        "tool",
+        "args",
+        "summary"
+      ],
+      "title": "CalendarCreateEventProposal",
+      "type": "object"
+    },
+    "CalendarFindMutualSlotProposal": {
+      "additionalProperties": false,
+      "properties": {
+        "proposal_id": {
+          "format": "uuid",
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "tool": {
+          "const": "calendar.find_mutual_slot",
+          "title": "Tool",
+          "type": "string"
+        },
+        "args": {
+          "$ref": "#/$defs/FindMutualSlotArgs"
+        },
+        "requires_approval": {
+          "default": false,
+          "title": "Requires Approval",
+          "type": "boolean"
+        },
+        "summary": {
+          "description": "Engine-generated description of exactly what would be executed. Show this text in approval prompts.",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "proposal_id",
+        "tool",
+        "args",
+        "summary"
+      ],
+      "title": "CalendarFindMutualSlotProposal",
+      "type": "object"
+    },
+    "CreateDraftArgs": {
+      "additionalProperties": false,
+      "description": "Create (not send) an email draft in the requester's own mailbox.",
+      "properties": {
+        "to_account_ids": {
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "title": "To Account Ids",
+          "type": "array"
+        },
+        "to_emails": {
+          "items": {
+            "maxLength": 254,
+            "minLength": 3,
+            "pattern": "^[^@\\s<>\\\"',;]+@[^@\\s<>\\\"',;]+\\.[^@\\s<>\\\"',;]+$",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "title": "To Emails",
+          "type": "array"
+        },
+        "subject": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        },
+        "body": {
+          "maxLength": 10000,
+          "minLength": 1,
+          "title": "Body",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subject",
+        "body"
+      ],
+      "title": "CreateDraftArgs",
+      "type": "object"
+    },
+    "CreateEventArgs": {
+      "additionalProperties": false,
+      "description": "Create a calendar event organized by the requester and invite attendees.",
+      "properties": {
+        "title": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "start": {
+          "format": "date-time",
+          "title": "Start",
+          "type": "string"
+        },
+        "end": {
+          "format": "date-time",
+          "title": "End",
+          "type": "string"
+        },
+        "timezone": {
+          "default": "Asia/Dubai",
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Timezone",
+          "type": "string"
+        },
+        "attendee_account_ids": {
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "title": "Attendee Account Ids",
+          "type": "array"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location"
+        }
+      },
+      "required": [
+        "title",
+        "start",
+        "end"
+      ],
+      "title": "CreateEventArgs",
+      "type": "object"
+    },
+    "FindMutualSlotArgs": {
+      "additionalProperties": false,
+      "description": "Find windows where every participant is free, using authorized free/busy data only.",
+      "properties": {
+        "participant_account_ids": {
+          "description": "All participants, requester first.",
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "type": "string"
+          },
+          "maxItems": 6,
+          "minItems": 2,
+          "title": "Participant Account Ids",
+          "type": "array"
+        },
+        "window_start": {
+          "format": "date-time",
+          "title": "Window Start",
+          "type": "string"
+        },
+        "window_end": {
+          "format": "date-time",
+          "title": "Window End",
+          "type": "string"
+        },
+        "duration_minutes": {
+          "maximum": 480,
+          "minimum": 15,
+          "title": "Duration Minutes",
+          "type": "integer"
+        },
+        "timezone": {
+          "default": "Asia/Dubai",
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Timezone",
+          "type": "string"
+        },
+        "max_slots": {
+          "default": 5,
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Max Slots",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "participant_account_ids",
+        "window_start",
+        "window_end",
+        "duration_minutes"
+      ],
+      "title": "FindMutualSlotArgs",
+      "type": "object"
+    },
+    "GmailCreateDraftProposal": {
+      "additionalProperties": false,
+      "properties": {
+        "proposal_id": {
+          "format": "uuid",
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "tool": {
+          "const": "gmail.create_draft",
+          "title": "Tool",
+          "type": "string"
+        },
+        "args": {
+          "$ref": "#/$defs/CreateDraftArgs"
+        },
+        "requires_approval": {
+          "const": true,
+          "default": true,
+          "title": "Requires Approval",
+          "type": "boolean"
+        },
+        "summary": {
+          "description": "Engine-generated description of exactly what would be executed. Show this text in approval prompts.",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "proposal_id",
+        "tool",
+        "args",
+        "summary"
+      ],
+      "title": "GmailCreateDraftProposal",
+      "type": "object"
+    },
+    "GmailListRecentProposal": {
+      "additionalProperties": false,
+      "properties": {
+        "proposal_id": {
+          "format": "uuid",
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "tool": {
+          "const": "gmail.list_recent",
+          "title": "Tool",
+          "type": "string"
+        },
+        "args": {
+          "$ref": "#/$defs/ListRecentEmailArgs"
+        },
+        "requires_approval": {
+          "default": false,
+          "title": "Requires Approval",
+          "type": "boolean"
+        },
+        "summary": {
+          "description": "Engine-generated description of exactly what would be executed. Show this text in approval prompts.",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "proposal_id",
+        "tool",
+        "args",
+        "summary"
+      ],
+      "title": "GmailListRecentProposal",
+      "type": "object"
+    },
+    "ListRecentEmailArgs": {
+      "additionalProperties": false,
+      "description": "Read recent messages from the requester's own mailbox (metadata + short snippet only).",
+      "properties": {
+        "max_results": {
+          "default": 10,
+          "maximum": 25,
+          "minimum": 1,
+          "title": "Max Results",
+          "type": "integer"
+        },
+        "query": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Gmail search syntax, e.g. 'from:huda newer_than:7d'.",
+          "title": "Query"
+        },
+        "unread_only": {
+          "default": false,
+          "title": "Unread Only",
+          "type": "boolean"
+        }
+      },
+      "title": "ListRecentEmailArgs",
+      "type": "object"
+    },
+    "MessagingChannel": {
+      "enum": [
+        "whatsapp",
+        "discord"
+      ],
+      "title": "MessagingChannel",
+      "type": "string"
+    },
+    "MessagingSendMessageProposal": {
+      "additionalProperties": false,
+      "properties": {
+        "proposal_id": {
+          "format": "uuid",
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "tool": {
+          "const": "messaging.send_message",
+          "title": "Tool",
+          "type": "string"
+        },
+        "args": {
+          "$ref": "#/$defs/SendMessageArgs"
+        },
+        "requires_approval": {
+          "const": true,
+          "default": true,
+          "title": "Requires Approval",
+          "type": "boolean"
+        },
+        "summary": {
+          "description": "Engine-generated description of exactly what would be executed. Show this text in approval prompts.",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "proposal_id",
+        "tool",
+        "args",
+        "summary"
+      ],
+      "title": "MessagingSendMessageProposal",
+      "type": "object"
+    },
+    "ResponseMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "total_ms": {
+          "minimum": 0,
+          "title": "Total Ms",
+          "type": "integer"
+        },
+        "llm_calls": {
+          "minimum": 0,
+          "title": "Llm Calls",
+          "type": "integer"
+        },
+        "prompt_tokens": {
+          "minimum": 0,
+          "title": "Prompt Tokens",
+          "type": "integer"
+        },
+        "completion_tokens": {
+          "minimum": 0,
+          "title": "Completion Tokens",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "total_ms",
+        "llm_calls",
+        "prompt_tokens",
+        "completion_tokens"
+      ],
+      "title": "ResponseMetrics",
+      "type": "object"
+    },
+    "SendMessageArgs": {
+      "additionalProperties": false,
+      "description": "Send a chat message to a registered account.",
+      "properties": {
+        "recipient_account_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "title": "Recipient Account Id",
+          "type": "string"
+        },
+        "channel": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MessagingChannel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Omit to let the backend use the recipient's preferred channel."
+        },
+        "text": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "recipient_account_id",
+        "text"
+      ],
+      "title": "SendMessageArgs",
+      "type": "object"
+    },
+    "TurnStatus": {
+      "enum": [
+        "completed",
+        "action_required",
+        "awaiting_results"
+      ],
+      "title": "TurnStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Returned by both agent endpoints.",
+  "properties": {
+    "request_id": {
+      "format": "uuid",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "conversation_id": {
+      "format": "uuid",
+      "title": "Conversation Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/TurnStatus"
+    },
+    "reply_text": {
+      "maxLength": 8000,
+      "title": "Reply Text",
+      "type": "string"
+    },
+    "action_proposals": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "calendar.create_event": "#/$defs/CalendarCreateEventProposal",
+            "calendar.find_mutual_slot": "#/$defs/CalendarFindMutualSlotProposal",
+            "gmail.create_draft": "#/$defs/GmailCreateDraftProposal",
+            "gmail.list_recent": "#/$defs/GmailListRecentProposal",
+            "messaging.send_message": "#/$defs/MessagingSendMessageProposal"
+          },
+          "propertyName": "tool"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/GmailListRecentProposal"
+          },
+          {
+            "$ref": "#/$defs/GmailCreateDraftProposal"
+          },
+          {
+            "$ref": "#/$defs/CalendarFindMutualSlotProposal"
+          },
+          {
+            "$ref": "#/$defs/CalendarCreateEventProposal"
+          },
+          {
+            "$ref": "#/$defs/MessagingSendMessageProposal"
+          }
+        ]
+      },
+      "maxItems": 8,
+      "title": "Action Proposals",
+      "type": "array"
+    },
+    "pending_proposal_ids": {
+      "description": "Every unresolved proposal of this turn.",
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "title": "Pending Proposal Ids",
+      "type": "array"
+    },
+    "cancelled_proposal_ids": {
+      "description": "Proposals withdrawn by the engine. Do not execute them; withdraw approval prompts.",
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "title": "Cancelled Proposal Ids",
+      "type": "array"
+    },
+    "model": {
+      "description": "Local model that produced the reply.",
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Model",
+      "type": "string"
+    },
+    "mode": {
+      "const": "local",
+      "default": "local",
+      "title": "Mode",
+      "type": "string"
+    },
+    "metrics": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResponseMetrics"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "request_id",
+    "conversation_id",
+    "status",
+    "reply_text",
+    "model"
+  ],
+  "title": "AgentResponse",
+  "type": "object"
+}

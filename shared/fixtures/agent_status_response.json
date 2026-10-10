@@ -1,0 +1,41 @@
+{
+  "status": "ok",
+  "mode": "local",
+  "contract_version": "0.1.0",
+  "engine_version": "0.1.0",
+  "llm": {
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "state": "ready",
+    "reachable": true,
+    "model_available": true,
+    "on_gpu": true,
+    "vram_bytes": 8053063680,
+    "context_length": 16384,
+    "capabilities": ["completion", "tools", "thinking", "vision"],
+    "detail": null
+  },
+  "stt": {
+    "engine": "faster-whisper",
+    "model": "large-v3-turbo",
+    "state": "not_loaded",
+    "device": "cuda",
+    "compute_type": "float16",
+    "detail": null
+  },
+  "tts": {
+    "engine": "kokoro-onnx",
+    "model": "kokoro-v1.0",
+    "state": "not_loaded",
+    "voice_profiles": ["awaiz-default", "huda-default"],
+    "detail": null
+  },
+  "gpu": {
+    "available": true,
+    "name": "NVIDIA GeForce RTX 5080 Laptop GPU",
+    "driver_version": "591.91",
+    "total_vram_mb": 16303,
+    "used_vram_mb": 8120,
+    "compute_capability": "12.0"
+  }
+}

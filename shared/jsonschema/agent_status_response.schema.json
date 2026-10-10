@@ -1,0 +1,327 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "ComponentState": {
+      "enum": [
+        "ready",
+        "not_loaded",
+        "unavailable"
+      ],
+      "title": "ComponentState",
+      "type": "string"
+    },
+    "GpuStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "available": {
+          "title": "Available",
+          "type": "boolean"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "driver_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Driver Version"
+        },
+        "total_vram_mb": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Vram Mb"
+        },
+        "used_vram_mb": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Used Vram Mb"
+        },
+        "compute_capability": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Compute Capability"
+        }
+      },
+      "required": [
+        "available"
+      ],
+      "title": "GpuStatus",
+      "type": "object"
+    },
+    "LlmStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "const": "ollama",
+          "default": "ollama",
+          "title": "Provider",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/ComponentState"
+        },
+        "reachable": {
+          "title": "Reachable",
+          "type": "boolean"
+        },
+        "model_available": {
+          "title": "Model Available",
+          "type": "boolean"
+        },
+        "on_gpu": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "True when the loaded weights are in VRAM.",
+          "title": "On Gpu"
+        },
+        "vram_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vram Bytes"
+        },
+        "context_length": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Context Length"
+        },
+        "capabilities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "detail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detail"
+        }
+      },
+      "required": [
+        "model",
+        "state",
+        "reachable",
+        "model_available"
+      ],
+      "title": "LlmStatus",
+      "type": "object"
+    },
+    "SttStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "engine": {
+          "title": "Engine",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/ComponentState"
+        },
+        "device": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device"
+        },
+        "compute_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Compute Type"
+        },
+        "detail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detail"
+        }
+      },
+      "required": [
+        "engine",
+        "model",
+        "state"
+      ],
+      "title": "SttStatus",
+      "type": "object"
+    },
+    "TtsStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "engine": {
+          "title": "Engine",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/ComponentState"
+        },
+        "voice_profiles": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Voice Profiles",
+          "type": "array"
+        },
+        "detail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detail"
+        }
+      },
+      "required": [
+        "engine",
+        "model",
+        "state"
+      ],
+      "title": "TtsStatus",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "enum": [
+        "ok",
+        "degraded"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "mode": {
+      "const": "local",
+      "default": "local",
+      "title": "Mode",
+      "type": "string"
+    },
+    "contract_version": {
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "engine_version": {
+      "title": "Engine Version",
+      "type": "string"
+    },
+    "llm": {
+      "$ref": "#/$defs/LlmStatus"
+    },
+    "stt": {
+      "$ref": "#/$defs/SttStatus"
+    },
+    "tts": {
+      "$ref": "#/$defs/TtsStatus"
+    },
+    "gpu": {
+      "$ref": "#/$defs/GpuStatus"
+    }
+  },
+  "required": [
+    "status",
+    "contract_version",
+    "engine_version",
+    "llm",
+    "stt",
+    "tts",
+    "gpu"
+  ],
+  "title": "AgentStatusResponse",
+  "type": "object"
+}

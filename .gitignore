@@ -1,0 +1,70 @@
+# ---- secrets: never commit ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+client_secret*.json
+credentials*.json
+token.json
+tokens.json
+*.token.json
+service-account*.json
+secrets/
+
+# ---- local runtime data (conversations, models, audio) ----
+# Anchored on purpose: code folders such as backend/models/ must stay tracked.
+/data/
+/models/
+/ai-engine/data/
+/ai-engine/models/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.onnx
+*.gguf
+*.safetensors
+voices*.bin
+*.wav
+*.mp3
+*.ogg
+*.opus
+*.m4a
+*.webm
+!tests/**/assets/*.wav
+!tests/**/assets/*.ogg
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ---- Node / frontend ----
+node_modules/
+.next/
+.vite/
+coverage/
+
+# ---- editors / OS ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Claude Code local settings ----
+.claude/settings.local.json

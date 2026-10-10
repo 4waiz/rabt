@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "AudioFormat": {
+      "enum": [
+        "wav",
+        "ogg_opus"
+      ],
+      "title": "AudioFormat",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Text-to-speech. The response body is audio bytes, not JSON.",
+  "properties": {
+    "request_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Request Id"
+    },
+    "account_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "title": "Account Id",
+      "type": "string"
+    },
+    "text": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    },
+    "voice_profile": {
+      "anyOf": [
+        {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Defaults to the account's own profile. Must be authorized for account_id.",
+      "title": "Voice Profile"
+    },
+    "format": {
+      "$ref": "#/$defs/AudioFormat",
+      "default": "wav"
+    },
+    "speed": {
+      "anyOf": [
+        {
+          "maximum": 2.0,
+          "minimum": 0.5,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Overrides the profile speed.",
+      "title": "Speed"
+    }
+  },
+  "required": [
+    "account_id",
+    "text"
+  ],
+  "title": "SpeakRequest",
+  "type": "object"
+}

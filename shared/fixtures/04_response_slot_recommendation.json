@@ -1,0 +1,12 @@
+{
+  "request_id": "0b7e6f2a-1c3d-4e5f-8a9b-0c1d2e3f4a51",
+  "conversation_id": "6f1c2b7e-3d4a-4c1e-9b8f-2a1d3c4e5f60",
+  "status": "completed",
+  "reply_text": "You and Huda are both free tomorrow (Sunday 11 Oct) at 6:00-7:00 PM and 7:30-8:30 PM. I recommend 6:00 PM. Should I propose that?",
+  "action_proposals": [],
+  "pending_proposal_ids": [],
+  "cancelled_proposal_ids": [],
+  "model": "qwen3.5:9b",
+  "mode": "local",
+  "metrics": {"total_ms": 1420, "llm_calls": 1, "prompt_tokens": 1890, "completion_tokens": 48}
+}

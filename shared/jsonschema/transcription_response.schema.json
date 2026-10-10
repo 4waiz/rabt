@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "TranscriptSegment": {
+      "additionalProperties": false,
+      "properties": {
+        "start_s": {
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "end_s": {
+          "minimum": 0,
+          "title": "End S",
+          "type": "number"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start_s",
+        "end_s",
+        "text"
+      ],
+      "title": "TranscriptSegment",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "request_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Request Id"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    },
+    "language": {
+      "title": "Language",
+      "type": "string"
+    },
+    "language_probability": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Language Probability"
+    },
+    "audio_duration_s": {
+      "minimum": 0,
+      "title": "Audio Duration S",
+      "type": "number"
+    },
+    "segments": {
+      "items": {
+        "$ref": "#/$defs/TranscriptSegment"
+      },
+      "title": "Segments",
+      "type": "array"
+    },
+    "model": {
+      "title": "Model",
+      "type": "string"
+    },
+    "device": {
+      "enum": [
+        "cuda",
+        "cpu"
+      ],
+      "title": "Device",
+      "type": "string"
+    },
+    "compute_type": {
+      "title": "Compute Type",
+      "type": "string"
+    },
+    "latency_ms": {
+      "minimum": 0,
+      "title": "Latency Ms",
+      "type": "integer"
+    },
+    "mode": {
+      "const": "local",
+      "default": "local",
+      "title": "Mode",
+      "type": "string"
+    }
+  },
+  "required": [
+    "text",
+    "language",
+    "audio_duration_s",
+    "model",
+    "device",
+    "compute_type",
+    "latency_ms"
+  ],
+  "title": "TranscriptionResponse",
+  "type": "object"
+}

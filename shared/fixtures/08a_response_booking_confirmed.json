@@ -1,0 +1,12 @@
+{
+  "request_id": "1c8f7a3b-2d4e-4f60-9b1c-1d2e3f4a5b62",
+  "conversation_id": "6f1c2b7e-3d4a-4c1e-9b8f-2a1d3c4e5f60",
+  "status": "completed",
+  "reply_text": "Booked: tuition with Huda on Sunday 11 Oct, 6:00-7:00 PM. Huda has been sent the invite.",
+  "action_proposals": [],
+  "pending_proposal_ids": [],
+  "cancelled_proposal_ids": [],
+  "model": "qwen3.5:9b",
+  "mode": "local",
+  "metrics": {"total_ms": 1210, "llm_calls": 1, "prompt_tokens": 2150, "completion_tokens": 31}
+}

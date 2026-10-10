@@ -1,0 +1,27 @@
+{
+  "request_id": "0b7e6f2a-1c3d-4e5f-8a9b-0c1d2e3f4a51",
+  "conversation_id": "6f1c2b7e-3d4a-4c1e-9b8f-2a1d3c4e5f60",
+  "status": "action_required",
+  "reply_text": "Let me check when you and Huda are both free tomorrow evening.",
+  "action_proposals": [
+    {
+      "proposal_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "tool": "calendar.find_mutual_slot",
+      "args": {
+        "participant_account_ids": ["awaiz", "huda"],
+        "window_start": "2026-10-11T17:00:00+04:00",
+        "window_end": "2026-10-11T21:00:00+04:00",
+        "duration_minutes": 60,
+        "timezone": "Asia/Dubai",
+        "max_slots": 5
+      },
+      "requires_approval": false,
+      "summary": "Find a 60-minute slot when awaiz and huda are both free on Sun 11 Oct 2026, 17:00-21:00 (Asia/Dubai)."
+    }
+  ],
+  "pending_proposal_ids": ["a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"],
+  "cancelled_proposal_ids": [],
+  "model": "qwen3.5:9b",
+  "mode": "local",
+  "metrics": {"total_ms": 1840, "llm_calls": 1, "prompt_tokens": 1650, "completion_tokens": 72}
+}

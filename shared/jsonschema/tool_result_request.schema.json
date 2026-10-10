@@ -1,0 +1,631 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "CalendarCreateEventToolResult": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "description": "request_id of the turn that produced the proposal.",
+          "format": "uuid",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "conversation_id": {
+          "format": "uuid",
+          "title": "Conversation Id",
+          "type": "string"
+        },
+        "account_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "title": "Account Id",
+          "type": "string"
+        },
+        "proposal_id": {
+          "format": "uuid",
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ToolExecutionStatus"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolError"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool": {
+          "const": "calendar.create_event",
+          "title": "Tool",
+          "type": "string"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CreateEventResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "request_id",
+        "conversation_id",
+        "account_id",
+        "proposal_id",
+        "status",
+        "tool"
+      ],
+      "title": "CalendarCreateEventToolResult",
+      "type": "object"
+    },
+    "CalendarFindMutualSlotToolResult": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "description": "request_id of the turn that produced the proposal.",
+          "format": "uuid",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "conversation_id": {
+          "format": "uuid",
+          "title": "Conversation Id",
+          "type": "string"
+        },
+        "account_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "title": "Account Id",
+          "type": "string"
+        },
+        "proposal_id": {
+          "format": "uuid",
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ToolExecutionStatus"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolError"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool": {
+          "const": "calendar.find_mutual_slot",
+          "title": "Tool",
+          "type": "string"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FindMutualSlotResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "request_id",
+        "conversation_id",
+        "account_id",
+        "proposal_id",
+        "status",
+        "tool"
+      ],
+      "title": "CalendarFindMutualSlotToolResult",
+      "type": "object"
+    },
+    "CreateDraftResult": {
+      "additionalProperties": false,
+      "properties": {
+        "draft_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Draft Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "draft_id"
+      ],
+      "title": "CreateDraftResult",
+      "type": "object"
+    },
+    "CreateEventResult": {
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Event Id",
+          "type": "string"
+        },
+        "start": {
+          "format": "date-time",
+          "title": "Start",
+          "type": "string"
+        },
+        "end": {
+          "format": "date-time",
+          "title": "End",
+          "type": "string"
+        },
+        "invited_account_ids": {
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "type": "string"
+          },
+          "title": "Invited Account Ids",
+          "type": "array"
+        },
+        "html_link": {
+          "anyOf": [
+            {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Html Link"
+        }
+      },
+      "required": [
+        "event_id",
+        "start",
+        "end"
+      ],
+      "title": "CreateEventResult",
+      "type": "object"
+    },
+    "EmailSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "message_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Message Id",
+          "type": "string"
+        },
+        "thread_id": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thread Id"
+        },
+        "sender": {
+          "maxLength": 320,
+          "minLength": 1,
+          "title": "Sender",
+          "type": "string"
+        },
+        "subject": {
+          "default": "",
+          "maxLength": 500,
+          "title": "Subject",
+          "type": "string"
+        },
+        "snippet": {
+          "default": "",
+          "maxLength": 500,
+          "title": "Snippet",
+          "type": "string"
+        },
+        "received_at": {
+          "format": "date-time",
+          "title": "Received At",
+          "type": "string"
+        },
+        "unread": {
+          "default": false,
+          "title": "Unread",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "message_id",
+        "sender",
+        "received_at"
+      ],
+      "title": "EmailSummary",
+      "type": "object"
+    },
+    "FindMutualSlotResult": {
+      "additionalProperties": false,
+      "description": "Free windows only. Never include event titles, attendees or other private details.",
+      "properties": {
+        "slots": {
+          "items": {
+            "$ref": "#/$defs/TimeSlot"
+          },
+          "maxItems": 20,
+          "title": "Slots",
+          "type": "array"
+        }
+      },
+      "required": [
+        "slots"
+      ],
+      "title": "FindMutualSlotResult",
+      "type": "object"
+    },
+    "GmailCreateDraftToolResult": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "description": "request_id of the turn that produced the proposal.",
+          "format": "uuid",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "conversation_id": {
+          "format": "uuid",
+          "title": "Conversation Id",
+          "type": "string"
+        },
+        "account_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "title": "Account Id",
+          "type": "string"
+        },
+        "proposal_id": {
+          "format": "uuid",
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ToolExecutionStatus"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolError"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool": {
+          "const": "gmail.create_draft",
+          "title": "Tool",
+          "type": "string"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CreateDraftResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "request_id",
+        "conversation_id",
+        "account_id",
+        "proposal_id",
+        "status",
+        "tool"
+      ],
+      "title": "GmailCreateDraftToolResult",
+      "type": "object"
+    },
+    "GmailListRecentToolResult": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "description": "request_id of the turn that produced the proposal.",
+          "format": "uuid",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "conversation_id": {
+          "format": "uuid",
+          "title": "Conversation Id",
+          "type": "string"
+        },
+        "account_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "title": "Account Id",
+          "type": "string"
+        },
+        "proposal_id": {
+          "format": "uuid",
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ToolExecutionStatus"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolError"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool": {
+          "const": "gmail.list_recent",
+          "title": "Tool",
+          "type": "string"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ListRecentEmailResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "request_id",
+        "conversation_id",
+        "account_id",
+        "proposal_id",
+        "status",
+        "tool"
+      ],
+      "title": "GmailListRecentToolResult",
+      "type": "object"
+    },
+    "ListRecentEmailResult": {
+      "additionalProperties": false,
+      "properties": {
+        "messages": {
+          "items": {
+            "$ref": "#/$defs/EmailSummary"
+          },
+          "maxItems": 25,
+          "title": "Messages",
+          "type": "array"
+        }
+      },
+      "required": [
+        "messages"
+      ],
+      "title": "ListRecentEmailResult",
+      "type": "object"
+    },
+    "MessagingChannel": {
+      "enum": [
+        "whatsapp",
+        "discord"
+      ],
+      "title": "MessagingChannel",
+      "type": "string"
+    },
+    "MessagingSendMessageToolResult": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "description": "request_id of the turn that produced the proposal.",
+          "format": "uuid",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "conversation_id": {
+          "format": "uuid",
+          "title": "Conversation Id",
+          "type": "string"
+        },
+        "account_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "title": "Account Id",
+          "type": "string"
+        },
+        "proposal_id": {
+          "format": "uuid",
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ToolExecutionStatus"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolError"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool": {
+          "const": "messaging.send_message",
+          "title": "Tool",
+          "type": "string"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SendMessageResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "request_id",
+        "conversation_id",
+        "account_id",
+        "proposal_id",
+        "status",
+        "tool"
+      ],
+      "title": "MessagingSendMessageToolResult",
+      "type": "object"
+    },
+    "SendMessageResult": {
+      "additionalProperties": false,
+      "properties": {
+        "message_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Message Id",
+          "type": "string"
+        },
+        "channel": {
+          "$ref": "#/$defs/MessagingChannel"
+        },
+        "sent_at": {
+          "format": "date-time",
+          "title": "Sent At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "message_id",
+        "channel",
+        "sent_at"
+      ],
+      "title": "SendMessageResult",
+      "type": "object"
+    },
+    "TimeSlot": {
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "format": "date-time",
+          "title": "Start",
+          "type": "string"
+        },
+        "end": {
+          "format": "date-time",
+          "title": "End",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "TimeSlot",
+      "type": "object"
+    },
+    "ToolError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_.]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable": {
+          "default": false,
+          "title": "Retryable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "ToolError",
+      "type": "object"
+    },
+    "ToolExecutionStatus": {
+      "enum": [
+        "succeeded",
+        "failed",
+        "rejected",
+        "denied"
+      ],
+      "title": "ToolExecutionStatus",
+      "type": "string"
+    }
+  },
+  "discriminator": {
+    "mapping": {
+      "calendar.create_event": "#/$defs/CalendarCreateEventToolResult",
+      "calendar.find_mutual_slot": "#/$defs/CalendarFindMutualSlotToolResult",
+      "gmail.create_draft": "#/$defs/GmailCreateDraftToolResult",
+      "gmail.list_recent": "#/$defs/GmailListRecentToolResult",
+      "messaging.send_message": "#/$defs/MessagingSendMessageToolResult"
+    },
+    "propertyName": "tool"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/GmailListRecentToolResult"
+    },
+    {
+      "$ref": "#/$defs/GmailCreateDraftToolResult"
+    },
+    {
+      "$ref": "#/$defs/CalendarFindMutualSlotToolResult"
+    },
+    {
+      "$ref": "#/$defs/CalendarCreateEventToolResult"
+    },
+    {
+      "$ref": "#/$defs/MessagingSendMessageToolResult"
+    }
+  ],
+  "title": "ToolResultRequest"
+}

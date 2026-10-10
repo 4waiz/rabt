@@ -1,0 +1,15 @@
+{
+  "request_id": "3e0b9c5d-4f6a-4b82-9d3e-3f4a5b6c7d84",
+  "text": "Hey Rabt, ask Huda when she's free tomorrow evening and prepare a tuition appointment.",
+  "language": "en",
+  "language_probability": 0.99,
+  "audio_duration_s": 4.8,
+  "segments": [
+    {"start_s": 0.0, "end_s": 4.6, "text": "Hey Rabt, ask Huda when she's free tomorrow evening and prepare a tuition appointment."}
+  ],
+  "model": "faster-whisper:large-v3-turbo",
+  "device": "cuda",
+  "compute_type": "float16",
+  "latency_ms": 310,
+  "mode": "local"
+}

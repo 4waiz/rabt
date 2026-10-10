@@ -1,0 +1,517 @@
+{
+  "contract_version": "0.1.0",
+  "tools": [
+    {
+      "name": "gmail.list_recent",
+      "description": "List recent emails in the requester's own mailbox (sender, subject, short snippet).",
+      "side_effects": false,
+      "requires_approval": false,
+      "args_schema": {
+        "additionalProperties": false,
+        "description": "Read recent messages from the requester's own mailbox (metadata + short snippet only).",
+        "properties": {
+          "max_results": {
+            "default": 10,
+            "maximum": 25,
+            "minimum": 1,
+            "title": "Max Results",
+            "type": "integer"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Gmail search syntax, e.g. 'from:huda newer_than:7d'.",
+            "title": "Query"
+          },
+          "unread_only": {
+            "default": false,
+            "title": "Unread Only",
+            "type": "boolean"
+          }
+        },
+        "title": "ListRecentEmailArgs",
+        "type": "object"
+      },
+      "result_schema": {
+        "$defs": {
+          "EmailSummary": {
+            "additionalProperties": false,
+            "properties": {
+              "message_id": {
+                "maxLength": 256,
+                "minLength": 1,
+                "title": "Message Id",
+                "type": "string"
+              },
+              "thread_id": {
+                "anyOf": [
+                  {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Thread Id"
+              },
+              "sender": {
+                "maxLength": 320,
+                "minLength": 1,
+                "title": "Sender",
+                "type": "string"
+              },
+              "subject": {
+                "default": "",
+                "maxLength": 500,
+                "title": "Subject",
+                "type": "string"
+              },
+              "snippet": {
+                "default": "",
+                "maxLength": 500,
+                "title": "Snippet",
+                "type": "string"
+              },
+              "received_at": {
+                "format": "date-time",
+                "title": "Received At",
+                "type": "string"
+              },
+              "unread": {
+                "default": false,
+                "title": "Unread",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "message_id",
+              "sender",
+              "received_at"
+            ],
+            "title": "EmailSummary",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/$defs/EmailSummary"
+            },
+            "maxItems": 25,
+            "title": "Messages",
+            "type": "array"
+          }
+        },
+        "required": [
+          "messages"
+        ],
+        "title": "ListRecentEmailResult",
+        "type": "object"
+      }
+    },
+    {
+      "name": "gmail.create_draft",
+      "description": "Create an email draft in the requester's mailbox. Does not send it.",
+      "side_effects": true,
+      "requires_approval": true,
+      "args_schema": {
+        "additionalProperties": false,
+        "description": "Create (not send) an email draft in the requester's own mailbox.",
+        "properties": {
+          "to_account_ids": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "To Account Ids",
+            "type": "array"
+          },
+          "to_emails": {
+            "items": {
+              "maxLength": 254,
+              "minLength": 3,
+              "pattern": "^[^@\\s<>\\\"',;]+@[^@\\s<>\\\"',;]+\\.[^@\\s<>\\\"',;]+$",
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "To Emails",
+            "type": "array"
+          },
+          "subject": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Subject",
+            "type": "string"
+          },
+          "body": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject",
+          "body"
+        ],
+        "title": "CreateDraftArgs",
+        "type": "object"
+      },
+      "result_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "draft_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Draft Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft_id"
+        ],
+        "title": "CreateDraftResult",
+        "type": "object"
+      }
+    },
+    {
+      "name": "calendar.find_mutual_slot",
+      "description": "Find time windows when all participants are free (free/busy only).",
+      "side_effects": false,
+      "requires_approval": false,
+      "args_schema": {
+        "additionalProperties": false,
+        "description": "Find windows where every participant is free, using authorized free/busy data only.",
+        "properties": {
+          "participant_account_ids": {
+            "description": "All participants, requester first.",
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 2,
+            "title": "Participant Account Ids",
+            "type": "array"
+          },
+          "window_start": {
+            "format": "date-time",
+            "title": "Window Start",
+            "type": "string"
+          },
+          "window_end": {
+            "format": "date-time",
+            "title": "Window End",
+            "type": "string"
+          },
+          "duration_minutes": {
+            "maximum": 480,
+            "minimum": 15,
+            "title": "Duration Minutes",
+            "type": "integer"
+          },
+          "timezone": {
+            "default": "Asia/Dubai",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Timezone",
+            "type": "string"
+          },
+          "max_slots": {
+            "default": 5,
+            "maximum": 10,
+            "minimum": 1,
+            "title": "Max Slots",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "participant_account_ids",
+          "window_start",
+          "window_end",
+          "duration_minutes"
+        ],
+        "title": "FindMutualSlotArgs",
+        "type": "object"
+      },
+      "result_schema": {
+        "$defs": {
+          "TimeSlot": {
+            "additionalProperties": false,
+            "properties": {
+              "start": {
+                "format": "date-time",
+                "title": "Start",
+                "type": "string"
+              },
+              "end": {
+                "format": "date-time",
+                "title": "End",
+                "type": "string"
+              }
+            },
+            "required": [
+              "start",
+              "end"
+            ],
+            "title": "TimeSlot",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Free windows only. Never include event titles, attendees or other private details.",
+        "properties": {
+          "slots": {
+            "items": {
+              "$ref": "#/$defs/TimeSlot"
+            },
+            "maxItems": 20,
+            "title": "Slots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slots"
+        ],
+        "title": "FindMutualSlotResult",
+        "type": "object"
+      }
+    },
+    {
+      "name": "calendar.create_event",
+      "description": "Create a calendar event organized by the requester and invite attendees.",
+      "side_effects": true,
+      "requires_approval": true,
+      "args_schema": {
+        "additionalProperties": false,
+        "description": "Create a calendar event organized by the requester and invite attendees.",
+        "properties": {
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "timezone": {
+            "default": "Asia/Dubai",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Timezone",
+            "type": "string"
+          },
+          "attendee_account_ids": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Attendee Account Ids",
+            "type": "array"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Location"
+          }
+        },
+        "required": [
+          "title",
+          "start",
+          "end"
+        ],
+        "title": "CreateEventArgs",
+        "type": "object"
+      },
+      "result_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "event_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Event Id",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "invited_account_ids": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9_-]*$",
+              "type": "string"
+            },
+            "title": "Invited Account Ids",
+            "type": "array"
+          },
+          "html_link": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Html Link"
+          }
+        },
+        "required": [
+          "event_id",
+          "start",
+          "end"
+        ],
+        "title": "CreateEventResult",
+        "type": "object"
+      }
+    },
+    {
+      "name": "messaging.send_message",
+      "description": "Send a WhatsApp/Discord message to a registered account.",
+      "side_effects": true,
+      "requires_approval": true,
+      "args_schema": {
+        "$defs": {
+          "MessagingChannel": {
+            "enum": [
+              "whatsapp",
+              "discord"
+            ],
+            "title": "MessagingChannel",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Send a chat message to a registered account.",
+        "properties": {
+          "recipient_account_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "title": "Recipient Account Id",
+            "type": "string"
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/MessagingChannel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Omit to let the backend use the recipient's preferred channel."
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipient_account_id",
+          "text"
+        ],
+        "title": "SendMessageArgs",
+        "type": "object"
+      },
+      "result_schema": {
+        "$defs": {
+          "MessagingChannel": {
+            "enum": [
+              "whatsapp",
+              "discord"
+            ],
+            "title": "MessagingChannel",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "properties": {
+          "message_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Message Id",
+            "type": "string"
+          },
+          "channel": {
+            "$ref": "#/$defs/MessagingChannel"
+          },
+          "sent_at": {
+            "format": "date-time",
+            "title": "Sent At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "channel",
+          "sent_at"
+        ],
+        "title": "SendMessageResult",
+        "type": "object"
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "request_id": "1c8f7a3b-2d4e-4f60-9b1c-1d2e3f4a5b62",
+  "conversation_id": "6f1c2b7e-3d4a-4c1e-9b8f-2a1d3c4e5f60",
+  "status": "action_required",
+  "reply_text": "I've prepared a tuition session with Huda for Sunday 11 Oct, 6:00-7:00 PM. Please approve it to send the invite.",
+  "action_proposals": [
+    {
+      "proposal_id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+      "tool": "calendar.create_event",
+      "args": {
+        "title": "Tuition with Huda",
+        "start": "2026-10-11T18:00:00+04:00",
+        "end": "2026-10-11T19:00:00+04:00",
+        "timezone": "Asia/Dubai",
+        "attendee_account_ids": ["huda"],
+        "description": "Tuition session arranged by Rabt.",
+        "location": null
+      },
+      "requires_approval": true,
+      "summary": "Create calendar event \"Tuition with Huda\" on Sun 11 Oct 2026, 18:00-19:00 (Asia/Dubai) and invite huda."
+    }
+  ],
+  "pending_proposal_ids": ["b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"],
+  "cancelled_proposal_ids": [],
+  "model": "qwen3.5:9b",
+  "mode": "local",
+  "metrics": {"total_ms": 1960, "llm_calls": 1, "prompt_tokens": 2010, "completion_tokens": 95}
+}
