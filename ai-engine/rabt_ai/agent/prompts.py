@@ -159,13 +159,7 @@ def _render_emails(proposal: ProposalRow, result: Mapping[str, Any], dates: Date
     messages = result.get("messages", [])
     if not messages:
         return "No matching emails."
-    limit = int(proposal.args.get("max_results") or 0)
-    more = (
-        f" This list stops at the requested limit of {limit}; there may be more."
-        if len(messages) >= limit > 0
-        else ""
-    )
-    lines = [f"{len(messages)} email(s), newest first.{more}"]
+    lines = [f"{len(messages)} email(s), newest first:"]
     for i, m in enumerate(messages, 1):
         received = _dt(m["received_at"]).astimezone(dates.tz)
         unread = " | unread" if m.get("unread") else ""
@@ -208,20 +202,39 @@ def render_tool_result(
     error: Mapping[str, Any] | None,
     dates: DateContext,
 ) -> str:
-    """Text the model sees for a resolved proposal. Third-party text is sanitized and wrapped."""
+    """Text the model sees for a resolved proposal.
+
+    Engine-written facts go on ``note:`` lines *outside* the untrusted wrapper (the model is
+    told to ignore instructions inside it); third-party content is sanitized and wrapped.
+    """
+    err = error or {}
+    notes: list[str] = []
+    body = ""
     if status == "succeeded" and result is not None:
         body = _render_success(proposal, result, dates)
         if proposal.requires_approval:
-            body = "The user approved this in the app and it has now been carried out. " + body
+            notes.append("The user approved this in the app and it has now been carried out.")
+        limit = int(proposal.args.get("max_results") or 0)
+        if (
+            proposal.tool == ToolName.GMAIL_LIST_RECENT.value
+            and limit
+            and len(result.get("messages", [])) >= limit
+        ):
+            notes.append(
+                f"Only the newest {limit} emails were fetched, so the real total is unknown (there may be more). "
+                f"If asked how many, say 'at least {limit}'."
+            )
     elif status == "rejected":
-        reason = f" Reason: {error.get('message')}" if error and error.get("message") else ""
-        body = f"The user declined this action in the app. Nothing was done.{reason}"
+        notes.append("The user declined this action in the app. Nothing was done.")
+        body = f"Reason given: {err['message']}" if err.get("message") else ""
     elif status == "denied":
-        body = f"The system did not allow this action. Nothing was done. Reason ({(error or {}).get('code')}): {(error or {}).get('message')}"
+        notes.append("The system did not allow this action. Nothing was done.")
+        body = f"Reason ({err.get('code')}): {err.get('message')}"
     elif status == "cancelled":
-        body = "Not executed: the user sent a new message before this was completed. Nothing was done."
+        notes.append("Not executed: the user sent a new message before this was completed. Nothing was done.")
     else:  # failed
-        err = error or {}
         retry = "Trying again later may work." if err.get("retryable") else "Retrying will not help."
-        body = f"Execution failed. Nothing was done. Error ({err.get('code')}): {err.get('message')}. {retry}"
-    return f"status: {status}\n" + wrap_untrusted(proposal.tool, sanitize_untrusted(body, 8000))
+        notes.append(f"Execution failed. Nothing was done. {retry}")
+        body = f"Error ({err.get('code')}): {err.get('message')}"
+    head = f"status: {status}\n" + "".join(f"note: {n}\n" for n in notes)
+    return head + (wrap_untrusted(proposal.tool, sanitize_untrusted(body, 8000)) if body else "")
