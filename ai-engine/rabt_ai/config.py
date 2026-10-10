@@ -111,6 +111,7 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = Field(default=8765, ge=1, le=65535)
     data_dir: Path = Field(default_factory=default_data_dir)
+    model_dir: Path | None = None  # default: <data_dir>/models
     default_timezone: str = "Asia/Dubai"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     identities_file: Path = PACKAGE_DIR / "defaults" / "identities.toml"
@@ -173,7 +174,7 @@ class Settings(BaseSettings):
 
     @property
     def models_dir(self) -> Path:
-        return self.data_dir / "models"
+        return self.model_dir or self.data_dir / "models"
 
     @property
     def logs_dir(self) -> Path:

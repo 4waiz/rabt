@@ -9,6 +9,8 @@ dependencies = ["rabt-shared", "rabt-ai-engine", "rabt-integrations"]
 dev = ["pytest>=8.0", "ruff>=0.6"]
 # NVIDIA cuBLAS 12.8+ for GPU speech recognition (CTranslate2). Opt in: `uv sync --group cuda`.
 cuda = ["nvidia-cublas-cu12>=12.8.4; sys_platform == 'win32' or sys_platform == 'linux'"]
+# Microphone capture for ai-engine/scripts/voice_chat.py. Opt in: `uv sync --group voice`.
+voice = ["sounddevice>=0.5"]
 
 [tool.uv]
 package = false

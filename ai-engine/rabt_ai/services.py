@@ -41,7 +41,7 @@ class Engine:
             storage=storage,
             llm=model,
             agent=AgentService(settings, registry, storage, model),
-            stt=SpeechToText(settings),
+            stt=SpeechToText(settings, vocabulary=[i.display_name for i in registry.identities.values()]),
             tts=TextToSpeech(settings, registry, storage),
         )
 

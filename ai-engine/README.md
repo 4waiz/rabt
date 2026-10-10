@@ -30,8 +30,11 @@ uv run rabt-ai serve                      # http://127.0.0.1:8765  (docs at /doc
 | `rabt-ai transcribe clip.ogg` | Transcribe a file |
 | `rabt-ai purge --all` / `--account huda` / `--older-than-days 7` | Delete local conversation data |
 | `rabt-ai export-openapi` | Regenerate `docs/openapi.json` |
-| `python ai-engine/scripts/test_voices.py` | Both voices, same sentence → WAV files + timings |
+| `python ai-engine/scripts/test_voices.py` | Both voices, same sentence → WAV files + timings + transcription round trip |
 | `python ai-engine/scripts/mock_integration_client.py` | End-to-end scheduling flow against a running engine, using a **mock** calendar |
+| `python ai-engine/scripts/voice_chat.py` | Talk to Rabt: microphone → STT → agent → TTS → speakers (`uv sync --group cuda --group voice`) |
+
+Integration guide for the backend: [`docs/AI_HANDOFF.md`](../docs/AI_HANDOFF.md).
 
 ## Configuration (`RABT_*` environment variables or `.env`)
 

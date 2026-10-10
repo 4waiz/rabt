@@ -34,8 +34,10 @@ def whisper_cache_dir(settings: Settings) -> Path:
 
 
 class SpeechToText:
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, vocabulary: list[str] | None = None):
         self._settings = settings
+        # Names Whisper has never seen ("Rabt", contacts) are biased in via hotwords.
+        self._hotwords = " ".join(dict.fromkeys(["Rabt", *(vocabulary or [])]))
         self._model: Any = None
         self._device: str | None = None
         self._compute_type: str | None = None
@@ -146,6 +148,7 @@ class SpeechToText:
                     temperature=0.0,
                     condition_on_previous_text=False,
                     vad_filter=duration > 30,
+                    hotwords=self._hotwords,
                 )
                 return list(segments), info, time.perf_counter() - started
 

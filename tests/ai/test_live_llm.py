@@ -239,38 +239,44 @@ def test_identity_claims_in_text_do_not_change_identity(live: tuple[Engine, Test
 # --------------------------------------------------------------------------- 14
 
 
-def test_no_request_leaves_this_machine_during_a_live_turn(tmp_path: Path) -> None:
-    # A fresh engine, so every connection of this turn is opened (and audited) inside the test.
-    engine = Engine.build(make_settings(tmp_path, llm_model=MODEL, llm_seed=42))
+def test_no_request_leaves_this_machine_during_a_live_turn(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Record every outbound TCP connection the engine opens during a full live turn.
+
+    httpx/httpcore open async connections through ``anyio.connect_tcp`` (on Windows the
+    proactor loop bypasses socket audit hooks), and sync clients through
+    ``socket.create_connection``; both are wrapped. A fresh engine guarantees no pooled
+    connection from earlier tests is reused.
+    """
+    import socket
+
+    import anyio
+
     seen: list[str] = []
-    recording = {"on": False}
+    real_connect_tcp, real_create_connection = anyio.connect_tcp, socket.create_connection
 
-    def hook(event: str, args: tuple[Any, ...]) -> None:
-        if not recording["on"]:
-            return
-        if event == "socket.getaddrinfo":
-            seen.append(str(args[0]))
-        elif event == "socket.connect" and len(args) > 1 and isinstance(args[1], tuple):
-            seen.append(str(args[1][0]))
+    async def recording_connect_tcp(remote_host: Any, remote_port: int, **kwargs: Any) -> Any:
+        seen.append(str(remote_host))
+        return await real_connect_tcp(remote_host, remote_port, **kwargs)
 
-    sys.addaudithook(hook)
+    def recording_create_connection(address: tuple[str, int], *args: Any, **kwargs: Any) -> Any:
+        seen.append(str(address[0]))
+        return real_create_connection(address, *args, **kwargs)
+
+    monkeypatch.setattr(anyio, "connect_tcp", recording_connect_tcp)
+    monkeypatch.setattr(socket, "create_connection", recording_create_connection)
+
+    engine = Engine.build(make_settings(tmp_path, llm_model=MODEL, llm_seed=42))
     with TestClient(
         create_app(engine=engine, warm_up=False), headers={"Authorization": f"Bearer {TEST_KEY}"}
     ) as client:
-        recording["on"] = True
-        try:
-            backend = _backend(client, approve=True)
-            backend.send(
-                "awaiz",
-                "tutor",
-                str(uuid4()),
-                "When are Huda and I both free tomorrow evening?",
-                sent_at=SENT_AT,
-            )
-        finally:
-            recording["on"] = False
-    print(f"\nhosts contacted: {sorted(set(seen))}")
-    assert seen, "expected the engine to contact the local Ollama server"
+        backend = _backend(client, approve=True)
+        final, _ = backend.send(
+            "awaiz", "tutor", str(uuid4()), "When are Huda and I both free tomorrow evening?", sent_at=SENT_AT
+        )
+    print(f"\nhosts contacted: {sorted(set(seen))}; reply: {final['reply_text'][:80]!r}")
+    assert seen, "expected the engine to connect to the local Ollama server"
     for host in set(seen):
         assert host == "localhost" or ipaddress.ip_address(host).is_loopback, (
             f"non-local connection to {host}"
