@@ -43,6 +43,9 @@ EmailAddress = Annotated[
     ),
 ]
 
+LocalTime = Annotated[str, StringConstraints(pattern=r"^([01]\d|2[0-3]):[0-5]\d$")]
+"""Wall-clock time ``HH:MM`` (24h) in the tool's ``timezone``."""
+
 MAX_FREEBUSY_WINDOW = timedelta(days=14)
 MAX_EVENT_DURATION = timedelta(hours=8)
 
@@ -95,6 +98,15 @@ class FindMutualSlotArgs(StrictModel):
     duration_minutes: int = Field(ge=15, le=480)
     timezone: Timezone = DEFAULT_TIMEZONE
     max_slots: int = Field(default=5, ge=1, le=10)
+    daily_start: LocalTime | None = Field(
+        default=None,
+        description="Optional (0.1.1): on every day of the window, only consider times from this local "
+        "time (HH:MM in `timezone`). Used for searches like 'any evening this week'.",
+    )
+    daily_end: LocalTime | None = Field(
+        default=None,
+        description="Optional (0.1.1): on every day of the window, only consider times until this local time.",
+    )
 
     @model_validator(mode="after")
     def _check(self) -> FindMutualSlotArgs:
@@ -106,6 +118,13 @@ class FindMutualSlotArgs(StrictModel):
             raise ValueError("search window must not exceed 14 days")
         if timedelta(minutes=self.duration_minutes) > span:
             raise ValueError("duration_minutes does not fit inside the search window")
+        if self.daily_start and self.daily_end:
+            start_min = int(self.daily_start[:2]) * 60 + int(self.daily_start[3:])
+            end_min = int(self.daily_end[:2]) * 60 + int(self.daily_end[3:])
+            if end_min <= start_min:
+                raise ValueError("daily_end must be after daily_start")
+            if self.duration_minutes > end_min - start_min:
+                raise ValueError("duration_minutes does not fit inside the daily window")
         return self
 
 

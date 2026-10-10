@@ -72,7 +72,7 @@ uv run pytest    # contract tests
 
 > **Windows + OneDrive:** if your clone lives in a OneDrive-synced folder, keep the virtualenv and runtime data out of it. Otherwise private conversations and GBs of CUDA libraries get uploaded:
 > ```powershell
-> $env:UV_PROJECT_ENVIRONMENT = "$env:LOCALAPPDATA\Rabt\venv"
+> $env:UV_PROJECT_ENVIRONMENT = "$HOME\.rabt\venv"
 > uv sync
 > ```
 

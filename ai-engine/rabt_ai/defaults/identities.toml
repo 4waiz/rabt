@@ -1,0 +1,64 @@
+# Registered Rabt identities. account_ids must match the integration backend's accounts.
+# Identity is asserted by the authenticated backend; nothing in a chat message can change it.
+
+[accounts.awaiz]
+display_name = "Awaiz"
+role = "tutor"
+voice_profile = "awaiz-default"
+allowed_tools = [
+  "gmail.list_recent",
+  "gmail.create_draft",
+  "calendar.find_mutual_slot",
+  "calendar.create_event",
+  "messaging.send_message",
+]
+about = "Awaiz is a tutor who teaches Huda."
+
+[accounts.awaiz.preferences]
+lesson_duration_minutes = 60
+lesson_title = "Tuition"
+
+[[accounts.awaiz.contacts]]
+account_id = "huda"
+display_name = "Huda"
+relationship = "student"
+
+[accounts.huda]
+display_name = "Huda"
+role = "student"
+voice_profile = "huda-default"
+allowed_tools = [
+  "gmail.list_recent",
+  "gmail.create_draft",
+  "calendar.find_mutual_slot",
+  "calendar.create_event",
+  "messaging.send_message",
+]
+about = "Huda is a student who takes tuition from Awaiz."
+
+[accounts.huda.preferences]
+lesson_duration_minutes = 60
+lesson_title = "Tuition"
+
+[[accounts.huda.contacts]]
+account_id = "awaiz"
+display_name = "Awaiz"
+relationship = "tutor"
+
+# Voice profiles use stock Kokoro voices. Personal (cloned) voices require a recorded consent
+# record from the person whose voice it is, and are not enabled in this version.
+[voice_profiles.awaiz-default]
+account_id = "awaiz"
+engine = "kokoro"
+voice = "am_michael"
+speed = 1.0
+lang = "en-us"
+description = "AI voice for Awaiz: American male, steady pace"
+
+[voice_profiles.huda-default]
+account_id = "huda"
+engine = "kokoro"
+voice = "af_heart"
+speed = 1.0
+lang = "en-us"
+description = "AI voice for Huda: American female, warm"

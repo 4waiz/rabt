@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "mode": "local",
-  "contract_version": "0.1.0",
+  "contract_version": "0.1.1",
   "engine_version": "0.1.0",
   "llm": {
     "provider": "ollama",

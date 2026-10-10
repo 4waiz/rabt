@@ -1,6 +1,6 @@
 # Rabt API Contract — AI engine ⇄ integration backend
 
-**Contract version: 0.1.0** · Source of truth: Pydantic models in [`shared/rabt_shared/`](../shared/rabt_shared/) ·
+**Contract version: 0.1.1** · Source of truth: Pydantic models in [`shared/rabt_shared/`](../shared/rabt_shared/) ·
 JSON Schemas: [`shared/jsonschema/`](../shared/jsonschema/) · Example payloads: [`shared/fixtures/`](../shared/fixtures/)
 
 | Side | Owner | Responsibilities |
@@ -275,6 +275,7 @@ Machine-readable: [`shared/jsonschema/tool_catalog.json`](../shared/jsonschema/t
   - `duration_minutes` 15–480
   - `timezone` (default `Asia/Dubai`)
   - `max_slots` 1–10 (default 5)
+  - `daily_start`, `daily_end`: optional `"HH:MM"` local times (since 0.1.1). When set, only consider times within this daily window on **every** day of the search window. For example, "any evening this week" has `window_start`/`window_end` spanning the week, with `daily_start: "17:00"` and `daily_end: "21:00"`.
 - **result**: `{ "slots": [ { "start", "end" } ] }` (≤ 20, sorted)
 - **Privacy:** return free windows only. Event titles, attendees, locations or any other detail are **rejected by the schema**. If a participant has not authorized free/busy sharing with the requester, report `denied` with `error.code = "freebusy_not_shared"`.
 
@@ -411,4 +412,5 @@ A `5xx` from `/respond` leaves the turn unprocessed, so retrying with the same `
 
 | Version | Date | Change |
 |---|---|---|
+| 0.1.1 | 2026-10-10 | Additive: optional `daily_start` / `daily_end` on `calendar.find_mutual_slot` for multi-day searches restricted to part of each day. Backends that ignore them stay valid; the engine also discards returned slots outside the daily window. |
 | 0.1.0 | 2026-10-10 | Initial contract: 6 endpoints, 5 tools, approval and cancellation lifecycle, error envelope. |

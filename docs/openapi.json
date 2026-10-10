@@ -1,0 +1,2177 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Rabt AI Engine",
+    "summary": "Local LLM agent, speech-to-text and text-to-speech for Rabt.",
+    "description": "Contract: docs/API_CONTRACT.md (version 0.1.1). All inference runs locally. The engine proposes actions; the integration backend executes them.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/agent/status": {
+      "get": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Agent Status",
+        "operationId": "agent_status_v1_agent_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentStatusResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/agent/respond": {
+      "post": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Agent Respond",
+        "operationId": "agent_respond_v1_agent_respond_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentRespondRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/agent/tool-result": {
+      "post": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Agent Tool Result",
+        "operationId": "agent_tool_result_v1_agent_tool_result_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/GmailListRecentToolResult"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GmailCreateDraftToolResult"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CalendarFindMutualSlotToolResult"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CalendarCreateEventToolResult"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MessagingSendMessageToolResult"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/audio/transcribe": {
+      "post": {
+        "tags": [
+          "audio"
+        ],
+        "summary": "Audio Transcribe",
+        "operationId": "audio_transcribe_v1_audio_transcribe_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_audio_transcribe_v1_audio_transcribe_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/audio/speak": {
+      "post": {
+        "tags": [
+          "audio"
+        ],
+        "summary": "Audio Speak",
+        "operationId": "audio_speak_v1_audio_speak_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeakRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Synthesized speech (AI-generated).",
+            "content": {
+              "audio/wav": {},
+              "audio/ogg": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AgentRespondRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id",
+            "description": "Unique per user turn. Re-sending the same body replays the stored response."
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id",
+            "description": "Chosen by the backend; bound to account_id on first use."
+          },
+          "account_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "title": "Account Id",
+            "description": "Authenticated by the integration backend. Never derived from message text."
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/Channel"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Timezone",
+            "default": "Asia/Dubai"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At",
+            "description": "When the user sent the message. Defaults to the time the engine received it."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "conversation_id",
+          "account_id",
+          "role",
+          "channel",
+          "message"
+        ],
+        "title": "AgentRespondRequest",
+        "description": "One user turn, sent by the authenticated integration backend."
+      },
+      "AgentResponse": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TurnStatus"
+          },
+          "reply_text": {
+            "type": "string",
+            "maxLength": 8000,
+            "title": "Reply Text"
+          },
+          "action_proposals": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/GmailListRecentProposal"
+                },
+                {
+                  "$ref": "#/components/schemas/GmailCreateDraftProposal"
+                },
+                {
+                  "$ref": "#/components/schemas/CalendarFindMutualSlotProposal"
+                },
+                {
+                  "$ref": "#/components/schemas/CalendarCreateEventProposal"
+                },
+                {
+                  "$ref": "#/components/schemas/MessagingSendMessageProposal"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "tool",
+                "mapping": {
+                  "calendar.create_event": "#/components/schemas/CalendarCreateEventProposal",
+                  "calendar.find_mutual_slot": "#/components/schemas/CalendarFindMutualSlotProposal",
+                  "gmail.create_draft": "#/components/schemas/GmailCreateDraftProposal",
+                  "gmail.list_recent": "#/components/schemas/GmailListRecentProposal",
+                  "messaging.send_message": "#/components/schemas/MessagingSendMessageProposal"
+                }
+              }
+            },
+            "type": "array",
+            "maxItems": 8,
+            "title": "Action Proposals"
+          },
+          "pending_proposal_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Pending Proposal Ids",
+            "description": "Every unresolved proposal of this turn."
+          },
+          "cancelled_proposal_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cancelled Proposal Ids",
+            "description": "Proposals withdrawn by the engine. Do not execute them; withdraw approval prompts."
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Model",
+            "description": "Local model that produced the reply."
+          },
+          "mode": {
+            "type": "string",
+            "const": "local",
+            "title": "Mode",
+            "default": "local"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "conversation_id",
+          "status",
+          "reply_text",
+          "model"
+        ],
+        "title": "AgentResponse",
+        "description": "Returned by both agent endpoints."
+      },
+      "AgentStatusResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degraded"
+            ],
+            "title": "Status"
+          },
+          "mode": {
+            "type": "string",
+            "const": "local",
+            "title": "Mode",
+            "default": "local"
+          },
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version"
+          },
+          "engine_version": {
+            "type": "string",
+            "title": "Engine Version"
+          },
+          "llm": {
+            "$ref": "#/components/schemas/LlmStatus"
+          },
+          "stt": {
+            "$ref": "#/components/schemas/SttStatus"
+          },
+          "tts": {
+            "$ref": "#/components/schemas/TtsStatus"
+          },
+          "gpu": {
+            "$ref": "#/components/schemas/GpuStatus"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "contract_version",
+          "engine_version",
+          "llm",
+          "stt",
+          "tts",
+          "gpu"
+        ],
+        "title": "AgentStatusResponse"
+      },
+      "AudioFormat": {
+        "type": "string",
+        "enum": [
+          "wav",
+          "ogg_opus"
+        ],
+        "title": "AudioFormat"
+      },
+      "Body_audio_transcribe_v1_audio_transcribe_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Audio: wav, mp3, ogg/opus, webm, m4a, flac"
+          },
+          "account_id": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "title": "Account Id"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z]{2,3}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "account_id"
+        ],
+        "title": "Body_audio_transcribe_v1_audio_transcribe_post"
+      },
+      "CalendarCreateEventProposal": {
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Proposal Id"
+          },
+          "tool": {
+            "type": "string",
+            "const": "calendar.create_event",
+            "title": "Tool"
+          },
+          "args": {
+            "$ref": "#/components/schemas/CreateEventArgs"
+          },
+          "requires_approval": {
+            "type": "boolean",
+            "const": true,
+            "title": "Requires Approval",
+            "default": true
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Summary",
+            "description": "Engine-generated description of exactly what would be executed. Show this text in approval prompts."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "proposal_id",
+          "tool",
+          "args",
+          "summary"
+        ],
+        "title": "CalendarCreateEventProposal"
+      },
+      "CalendarCreateEventToolResult": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id",
+            "description": "request_id of the turn that produced the proposal."
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "account_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "title": "Account Id"
+          },
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Proposal Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ToolExecutionStatus"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ToolError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tool": {
+            "type": "string",
+            "const": "calendar.create_event",
+            "title": "Tool"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CreateEventResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "conversation_id",
+          "account_id",
+          "proposal_id",
+          "status",
+          "tool"
+        ],
+        "title": "CalendarCreateEventToolResult"
+      },
+      "CalendarFindMutualSlotProposal": {
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Proposal Id"
+          },
+          "tool": {
+            "type": "string",
+            "const": "calendar.find_mutual_slot",
+            "title": "Tool"
+          },
+          "args": {
+            "$ref": "#/components/schemas/FindMutualSlotArgs"
+          },
+          "requires_approval": {
+            "type": "boolean",
+            "title": "Requires Approval",
+            "default": false
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Summary",
+            "description": "Engine-generated description of exactly what would be executed. Show this text in approval prompts."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "proposal_id",
+          "tool",
+          "args",
+          "summary"
+        ],
+        "title": "CalendarFindMutualSlotProposal"
+      },
+      "CalendarFindMutualSlotToolResult": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id",
+            "description": "request_id of the turn that produced the proposal."
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "account_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "title": "Account Id"
+          },
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Proposal Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ToolExecutionStatus"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ToolError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tool": {
+            "type": "string",
+            "const": "calendar.find_mutual_slot",
+            "title": "Tool"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FindMutualSlotResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "conversation_id",
+          "account_id",
+          "proposal_id",
+          "status",
+          "tool"
+        ],
+        "title": "CalendarFindMutualSlotToolResult"
+      },
+      "Channel": {
+        "type": "string",
+        "enum": [
+          "web",
+          "whatsapp",
+          "discord"
+        ],
+        "title": "Channel"
+      },
+      "ComponentState": {
+        "type": "string",
+        "enum": [
+          "ready",
+          "not_loaded",
+          "unavailable"
+        ],
+        "title": "ComponentState"
+      },
+      "CreateDraftArgs": {
+        "properties": {
+          "to_account_ids": {
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "To Account Ids"
+          },
+          "to_emails": {
+            "items": {
+              "type": "string",
+              "maxLength": 254,
+              "minLength": 3,
+              "pattern": "^[^@\\s<>\\\"',;]+@[^@\\s<>\\\"',;]+\\.[^@\\s<>\\\"',;]+$"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "To Emails"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Body"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "subject",
+          "body"
+        ],
+        "title": "CreateDraftArgs",
+        "description": "Create (not send) an email draft in the requester's own mailbox."
+      },
+      "CreateDraftResult": {
+        "properties": {
+          "draft_id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Draft Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft_id"
+        ],
+        "title": "CreateDraftResult"
+      },
+      "CreateEventArgs": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Timezone",
+            "default": "Asia/Dubai"
+          },
+          "attendee_account_ids": {
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Attendee Account Ids"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "start",
+          "end"
+        ],
+        "title": "CreateEventArgs",
+        "description": "Create a calendar event organized by the requester and invite attendees."
+      },
+      "CreateEventResult": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Event Id"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "invited_account_ids": {
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "type": "array",
+            "title": "Invited Account Ids"
+          },
+          "html_link": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Html Link"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "event_id",
+          "start",
+          "end"
+        ],
+        "title": "CreateEventResult"
+      },
+      "EmailSummary": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Message Id"
+          },
+          "thread_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thread Id"
+          },
+          "sender": {
+            "type": "string",
+            "maxLength": 320,
+            "minLength": 1,
+            "title": "Sender"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Subject",
+            "default": ""
+          },
+          "snippet": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Snippet",
+            "default": ""
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          },
+          "unread": {
+            "type": "boolean",
+            "title": "Unread",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message_id",
+          "sender",
+          "received_at"
+        ],
+        "title": "EmailSummary"
+      },
+      "FindMutualSlotArgs": {
+        "properties": {
+          "participant_account_ids": {
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "type": "array",
+            "maxItems": 6,
+            "minItems": 2,
+            "title": "Participant Account Ids",
+            "description": "All participants, requester first."
+          },
+          "window_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window Start"
+          },
+          "window_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window End"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "maximum": 480.0,
+            "minimum": 15.0,
+            "title": "Duration Minutes"
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Timezone",
+            "default": "Asia/Dubai"
+          },
+          "max_slots": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Max Slots",
+            "default": 5
+          },
+          "daily_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Start",
+            "description": "Optional (0.1.1): on every day of the window, only consider times from this local time (HH:MM in `timezone`). Used for searches like 'any evening this week'."
+          },
+          "daily_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily End",
+            "description": "Optional (0.1.1): on every day of the window, only consider times until this local time."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "participant_account_ids",
+          "window_start",
+          "window_end",
+          "duration_minutes"
+        ],
+        "title": "FindMutualSlotArgs",
+        "description": "Find windows where every participant is free, using authorized free/busy data only."
+      },
+      "FindMutualSlotResult": {
+        "properties": {
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/TimeSlot"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Slots"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "slots"
+        ],
+        "title": "FindMutualSlotResult",
+        "description": "Free windows only. Never include event titles, attendees or other private details."
+      },
+      "GmailCreateDraftProposal": {
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Proposal Id"
+          },
+          "tool": {
+            "type": "string",
+            "const": "gmail.create_draft",
+            "title": "Tool"
+          },
+          "args": {
+            "$ref": "#/components/schemas/CreateDraftArgs"
+          },
+          "requires_approval": {
+            "type": "boolean",
+            "const": true,
+            "title": "Requires Approval",
+            "default": true
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Summary",
+            "description": "Engine-generated description of exactly what would be executed. Show this text in approval prompts."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "proposal_id",
+          "tool",
+          "args",
+          "summary"
+        ],
+        "title": "GmailCreateDraftProposal"
+      },
+      "GmailCreateDraftToolResult": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id",
+            "description": "request_id of the turn that produced the proposal."
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "account_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "title": "Account Id"
+          },
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Proposal Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ToolExecutionStatus"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ToolError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tool": {
+            "type": "string",
+            "const": "gmail.create_draft",
+            "title": "Tool"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CreateDraftResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "conversation_id",
+          "account_id",
+          "proposal_id",
+          "status",
+          "tool"
+        ],
+        "title": "GmailCreateDraftToolResult"
+      },
+      "GmailListRecentProposal": {
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Proposal Id"
+          },
+          "tool": {
+            "type": "string",
+            "const": "gmail.list_recent",
+            "title": "Tool"
+          },
+          "args": {
+            "$ref": "#/components/schemas/ListRecentEmailArgs"
+          },
+          "requires_approval": {
+            "type": "boolean",
+            "title": "Requires Approval",
+            "default": false
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Summary",
+            "description": "Engine-generated description of exactly what would be executed. Show this text in approval prompts."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "proposal_id",
+          "tool",
+          "args",
+          "summary"
+        ],
+        "title": "GmailListRecentProposal"
+      },
+      "GmailListRecentToolResult": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id",
+            "description": "request_id of the turn that produced the proposal."
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "account_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "title": "Account Id"
+          },
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Proposal Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ToolExecutionStatus"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ToolError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tool": {
+            "type": "string",
+            "const": "gmail.list_recent",
+            "title": "Tool"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ListRecentEmailResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "conversation_id",
+          "account_id",
+          "proposal_id",
+          "status",
+          "tool"
+        ],
+        "title": "GmailListRecentToolResult"
+      },
+      "GpuStatus": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "driver_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver Version"
+          },
+          "total_vram_mb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Vram Mb"
+          },
+          "used_vram_mb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used Vram Mb"
+          },
+          "compute_capability": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compute Capability"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "available"
+        ],
+        "title": "GpuStatus"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "default": "ok"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "service",
+          "version"
+        ],
+        "title": "HealthResponse"
+      },
+      "ListRecentEmailArgs": {
+        "properties": {
+          "max_results": {
+            "type": "integer",
+            "maximum": 25.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "default": 10
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query",
+            "description": "Gmail search syntax, e.g. 'from:huda newer_than:7d'."
+          },
+          "unread_only": {
+            "type": "boolean",
+            "title": "Unread Only",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ListRecentEmailArgs",
+        "description": "Read recent messages from the requester's own mailbox (metadata + short snippet only)."
+      },
+      "ListRecentEmailResult": {
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/EmailSummary"
+            },
+            "type": "array",
+            "maxItems": 25,
+            "title": "Messages"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "messages"
+        ],
+        "title": "ListRecentEmailResult"
+      },
+      "LlmStatus": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "ollama",
+            "title": "Provider",
+            "default": "ollama"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ComponentState"
+          },
+          "reachable": {
+            "type": "boolean",
+            "title": "Reachable"
+          },
+          "model_available": {
+            "type": "boolean",
+            "title": "Model Available"
+          },
+          "on_gpu": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "On Gpu",
+            "description": "True when the loaded weights are in VRAM."
+          },
+          "vram_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vram Bytes"
+          },
+          "context_length": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Length"
+          },
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Capabilities"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "model",
+          "state",
+          "reachable",
+          "model_available"
+        ],
+        "title": "LlmStatus"
+      },
+      "MessagingChannel": {
+        "type": "string",
+        "enum": [
+          "whatsapp",
+          "discord"
+        ],
+        "title": "MessagingChannel"
+      },
+      "MessagingSendMessageProposal": {
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Proposal Id"
+          },
+          "tool": {
+            "type": "string",
+            "const": "messaging.send_message",
+            "title": "Tool"
+          },
+          "args": {
+            "$ref": "#/components/schemas/SendMessageArgs"
+          },
+          "requires_approval": {
+            "type": "boolean",
+            "const": true,
+            "title": "Requires Approval",
+            "default": true
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Summary",
+            "description": "Engine-generated description of exactly what would be executed. Show this text in approval prompts."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "proposal_id",
+          "tool",
+          "args",
+          "summary"
+        ],
+        "title": "MessagingSendMessageProposal"
+      },
+      "MessagingSendMessageToolResult": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id",
+            "description": "request_id of the turn that produced the proposal."
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "account_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "title": "Account Id"
+          },
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Proposal Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ToolExecutionStatus"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ToolError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tool": {
+            "type": "string",
+            "const": "messaging.send_message",
+            "title": "Tool"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SendMessageResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "conversation_id",
+          "account_id",
+          "proposal_id",
+          "status",
+          "tool"
+        ],
+        "title": "MessagingSendMessageToolResult"
+      },
+      "ResponseMetrics": {
+        "properties": {
+          "total_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Ms"
+          },
+          "llm_calls": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Llm Calls"
+          },
+          "prompt_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Prompt Tokens"
+          },
+          "completion_tokens": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Completion Tokens"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "total_ms",
+          "llm_calls",
+          "prompt_tokens",
+          "completion_tokens"
+        ],
+        "title": "ResponseMetrics"
+      },
+      "Role": {
+        "type": "string",
+        "enum": [
+          "tutor",
+          "student"
+        ],
+        "title": "Role"
+      },
+      "SendMessageArgs": {
+        "properties": {
+          "recipient_account_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "title": "Recipient Account Id"
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MessagingChannel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Omit to let the backend use the recipient's preferred channel."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "recipient_account_id",
+          "text"
+        ],
+        "title": "SendMessageArgs",
+        "description": "Send a chat message to a registered account."
+      },
+      "SendMessageResult": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Message Id"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/MessagingChannel"
+          },
+          "sent_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Sent At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message_id",
+          "channel",
+          "sent_at"
+        ],
+        "title": "SendMessageResult"
+      },
+      "SpeakRequest": {
+        "properties": {
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "account_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "title": "Account Id"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "voice_profile": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Profile",
+            "description": "Defaults to the account's own profile. Must be authorized for account_id."
+          },
+          "format": {
+            "$ref": "#/components/schemas/AudioFormat",
+            "default": "wav"
+          },
+          "speed": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 2.0,
+                "minimum": 0.5
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed",
+            "description": "Overrides the profile speed."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "account_id",
+          "text"
+        ],
+        "title": "SpeakRequest",
+        "description": "Text-to-speech. The response body is audio bytes, not JSON."
+      },
+      "SttStatus": {
+        "properties": {
+          "engine": {
+            "type": "string",
+            "title": "Engine"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ComponentState"
+          },
+          "device": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device"
+          },
+          "compute_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compute Type"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "engine",
+          "model",
+          "state"
+        ],
+        "title": "SttStatus"
+      },
+      "TimeSlot": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "TimeSlot"
+      },
+      "ToolError": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.]*$",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "retryable": {
+            "type": "boolean",
+            "title": "Retryable",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ToolError"
+      },
+      "ToolExecutionStatus": {
+        "type": "string",
+        "enum": [
+          "succeeded",
+          "failed",
+          "rejected",
+          "denied"
+        ],
+        "title": "ToolExecutionStatus"
+      },
+      "TranscriptSegment": {
+        "properties": {
+          "start_s": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Start S"
+          },
+          "end_s": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "End S"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "start_s",
+          "end_s",
+          "text"
+        ],
+        "title": "TranscriptSegment"
+      },
+      "TranscriptionResponse": {
+        "properties": {
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language"
+          },
+          "language_probability": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language Probability"
+          },
+          "audio_duration_s": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Audio Duration S"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/TranscriptSegment"
+            },
+            "type": "array",
+            "title": "Segments"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "device": {
+            "type": "string",
+            "enum": [
+              "cuda",
+              "cpu"
+            ],
+            "title": "Device"
+          },
+          "compute_type": {
+            "type": "string",
+            "title": "Compute Type"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Latency Ms"
+          },
+          "mode": {
+            "type": "string",
+            "const": "local",
+            "title": "Mode",
+            "default": "local"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "language",
+          "audio_duration_s",
+          "model",
+          "device",
+          "compute_type",
+          "latency_ms"
+        ],
+        "title": "TranscriptionResponse"
+      },
+      "TtsStatus": {
+        "properties": {
+          "engine": {
+            "type": "string",
+            "title": "Engine"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ComponentState"
+          },
+          "voice_profiles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Voice Profiles"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "engine",
+          "model",
+          "state"
+        ],
+        "title": "TtsStatus"
+      },
+      "TurnStatus": {
+        "type": "string",
+        "enum": [
+          "completed",
+          "action_required",
+          "awaiting_results"
+        ],
+        "title": "TurnStatus"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "description": "Shared service token (RABT_INTERNAL_API_KEY).",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
