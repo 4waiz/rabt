@@ -42,8 +42,8 @@ uv run python -m rabt_shared.jsonschema_export --check
 ## Windows notes
 
 - This machine's clone sits in OneDrive. Keep virtualenvs, models, SQLite databases and audio **outside** the repo:
-  - `$env:UV_PROJECT_ENVIRONMENT = "$env:LOCALAPPDATA\Rabt\venv"` before `uv` commands.
-  - `RABT_DATA_DIR` defaults to `%LOCALAPPDATA%\Rabt`.
+  - `$env:UV_PROJECT_ENVIRONMENT = "$HOME\.rabt\venv"` before `uv` commands.
+  - `RABT_DATA_DIR` defaults to `%USERPROFILE%\.rabt`. It is not under AppData because processes started from MSIX-packaged apps (such as the Claude desktop app) get AppData writes redirected into a private sandbox.
 - Use `python -X utf8` (or `$env:PYTHONUTF8=1`) when printing non-ASCII text.
 
 ## Git
