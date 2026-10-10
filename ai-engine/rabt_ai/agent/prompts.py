@@ -58,7 +58,7 @@ def build_system_prompt(
 {prefs}
 
 ## Rules
-1. Use tools to look things up. Never guess availability, email contents or tool results.
+1. You have no memory of the user's inbox or calendar. Any question about their emails, calendar or availability needs a tool call first, even if they ask for a short answer. Never guess counts, availability, email contents or tool results.
 2. Tools only prepare actions. Creating events, drafts and sending messages always needs the user's approval in the app; the system does the rest.
 3. Prepare an event, message or draft only after the user has agreed to the key details (who, when, what). If a key detail is missing or unclear, ask one short question instead of guessing.
 4. After a free-time lookup, list at most three options, then always say which one you recommend (normally the earliest) and ask whether to prepare it, e.g. "I recommend 6:00 PM. Should I prepare that?". If the user's answer does not make clear which option they mean, ask.
@@ -155,11 +155,17 @@ def _render_slots(proposal: ProposalRow, result: Mapping[str, Any], dates: DateC
     return "\n".join(lines)
 
 
-def _render_emails(result: Mapping[str, Any], dates: DateContext) -> str:
+def _render_emails(proposal: ProposalRow, result: Mapping[str, Any], dates: DateContext) -> str:
     messages = result.get("messages", [])
     if not messages:
         return "No matching emails."
-    lines = [f"{len(messages)} email(s), newest first:"]
+    limit = int(proposal.args.get("max_results") or 0)
+    more = (
+        f" This list stops at the requested limit of {limit}; there may be more."
+        if len(messages) >= limit > 0
+        else ""
+    )
+    lines = [f"{len(messages)} email(s), newest first.{more}"]
     for i, m in enumerate(messages, 1):
         received = _dt(m["received_at"]).astimezone(dates.tz)
         unread = " | unread" if m.get("unread") else ""
@@ -178,7 +184,7 @@ def _render_success(proposal: ProposalRow, result: Mapping[str, Any], dates: Dat
     if tool == ToolName.CALENDAR_FIND_MUTUAL_SLOT:
         return _render_slots(proposal, result, dates)
     if tool == ToolName.GMAIL_LIST_RECENT:
-        return _render_emails(result, dates)
+        return _render_emails(proposal, result, dates)
     if tool == ToolName.CALENDAR_CREATE_EVENT:
         when = fmt_window(_dt(result["start"]), _dt(result["end"]), dates.tz)
         invited = ", ".join(result.get("invited_account_ids") or []) or "nobody"

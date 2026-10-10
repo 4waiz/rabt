@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from conftest import FakeLlm, call, calls, reply, slots_result, tool_result_body
 
-from rabt_ai.agent.orchestrator import CLAIM_CORRECTION, SAFE_NOT_DONE
+from rabt_ai.agent.orchestrator import CLAIM_CORRECTION, GROUNDING_NUDGE, SAFE_NOT_DONE
 from rabt_ai.errors import RabtError
 from rabt_ai.services import Engine
 from rabt_shared import ErrorCode
@@ -403,6 +403,52 @@ def test_agent_loop_is_bounded(client: Any, fake_llm: FakeLlm, respond_body: Any
     data = _post(client, "/v1/agent/respond", respond_body("Do something impossible"))
     assert data["status"] == "completed" and "rephrase" in data["reply_text"]
     assert len(fake_llm.calls) == 4  # RABT_AGENT_MAX_LLM_CALLS
+
+
+# --------------------------------------------------------------------------- grounding
+
+
+def test_data_question_answered_without_lookup_is_challenged(
+    client: Any, fake_llm: FakeLlm, respond_body: Any
+) -> None:
+    fake_llm.push(reply("5"), call("list_recent_emails", max_results=10))
+    data = _post(
+        client,
+        "/v1/agent/respond",
+        respond_body("How many emails did I get recently? Reply with just the count."),
+    )
+    assert data["status"] == "action_required"
+    assert data["action_proposals"][0]["tool"] == "gmail.list_recent"
+    assert GROUNDING_NUDGE in fake_llm.all_text(1)
+
+
+def test_capped_email_list_tells_the_model_there_may_be_more(
+    client: Any, fake_llm: FakeLlm, respond_body: Any
+) -> None:
+    fake_llm.push(call("list_recent_emails", max_results=2))
+    data = _post(client, "/v1/agent/respond", respond_body("How many emails did I get today?"))
+    email = {"sender": "a@example.com", "subject": "s", "received_at": "2026-10-10T19:00:00+04:00"}
+    result = {"messages": [{"message_id": "m1", **email}, {"message_id": "m2", **email}]}
+    fake_llm.push(reply("At least 2."))
+    _post(
+        client,
+        "/v1/agent/tool-result",
+        tool_result_body(data, data["action_proposals"][0], status="succeeded", result=result),
+    )
+    assert "there may be more" in fake_llm.all_text()
+
+
+def test_grounding_challenge_happens_only_once(client: Any, fake_llm: FakeLlm, respond_body: Any) -> None:
+    fake_llm.push(reply("Which mailbox do you mean?"), reply("Do you mean your Gmail inbox?"))
+    data = _post(client, "/v1/agent/respond", respond_body("Do I have unread mail?"))
+    assert data["status"] == "completed" and data["reply_text"] == "Do you mean your Gmail inbox?"
+    assert len(fake_llm.calls) == 2
+
+
+def test_non_data_requests_are_not_challenged(client: Any, fake_llm: FakeLlm, respond_body: Any) -> None:
+    fake_llm.push(reply("Sure, what should the email say?"))
+    data = _post(client, "/v1/agent/respond", respond_body("Draft an email to Huda about tomorrow"))
+    assert data["reply_text"] == "Sure, what should the email say?" and len(fake_llm.calls) == 1
 
 
 # --------------------------------------------------------------------------- prompt injection (12)

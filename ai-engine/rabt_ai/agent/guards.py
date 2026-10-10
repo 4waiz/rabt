@@ -57,6 +57,20 @@ def has_leftover_markup(text: str) -> bool:
     return bool(_LEFTOVER_MARKUP.search(text))
 
 
+_DATA_WORDS = re.compile(
+    r"\b(?:e-?mails?|inbox|gmail|unread|mails?|calendar|free|busy|available|availability|schedule)\b", re.I
+)
+_ASKING = re.compile(
+    r"\?|^\s*(?:how|what|when|which|who|do|does|did|is|are|am|any|check|find|look|show|list|tell|see|read)\b",
+    re.I,
+)
+
+
+def needs_lookup(text: str) -> bool:
+    """True when the user asks about their own email/calendar/availability (data only a tool can supply)."""
+    return bool(_DATA_WORDS.search(text) and _ASKING.search(text))
+
+
 _VERBS = (
     r"(?:booked|sent|scheduled|created|confirmed|added|emailed|messaged|delivered|drafted|invited|"
     r"reserved|arranged|set\s+up|rescheduled|shared|forwarded)"
